@@ -1556,8 +1556,8 @@ async function downloadSwfToCache(swfUrl){
   // y, como último recurso, los proxies públicos de respaldo.
   const workerSrc = PROXY_WORKER_URL ? workerProxyUrl(swfUrl, "swf") : null;
   const sources = [
-    swfUrl,
     ...(workerSrc ? [workerSrc] : []),
+    swfUrl,
     'https://corsproxy.io/?'+encodeURIComponent(swfUrl),
     'https://api.allorigins.win/raw?url='+encodeURIComponent(swfUrl),
     'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(swfUrl),
