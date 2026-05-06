@@ -1585,6 +1585,22 @@ async function downloadSwfToCache(swfUrl){
       }else{
         const buf=await resp.arrayBuffer(); chunks.push(new Uint8Array(buf)); received=buf.byteLength;
       }
+      // ---- Validación de firma SWF (FWS / CWS / ZWS) ----
+      // Evita que Ruffle reciba un HTML de error de proxy o un archivo
+      // corrupto/truncado y muestre "Not a valid swf".
+      const _sigBuf = chunks[0] && chunks[0].length>=3
+        ? chunks[0]
+        : (function(){ const all=new Uint8Array(received); let o=0; for(const c of chunks){ all.set(c,o); o+=c.length; } return all; })();
+      const _sig = String.fromCharCode(_sigBuf[0]||0,_sigBuf[1]||0,_sigBuf[2]||0);
+      if(_sig!=='FWS' && _sig!=='CWS' && _sig!=='ZWS'){
+        let _hint='archivo no reconocido';
+        if(_sig==='<!D'||_sig==='<ht'||_sig==='<HT') _hint='el servidor devolvió HTML (probable error 404/CORS del proxy)';
+        else if(_sig==='MZ\0'.slice(0,3) || (_sigBuf[0]===0x4D && _sigBuf[1]===0x5A)) _hint='es un proyector .exe de Flash, no un .swf';
+        else if(_sigBuf[0]===0x50 && _sigBuf[1]===0x4B) _hint='es un .zip — extrae el .swf primero';
+        else if(_sigBuf[0]===0x1F && _sigBuf[1]===0x8B) _hint='está comprimido en gzip — descomprime primero';
+        lastErr=new Error('Firma SWF inválida ('+_hint+')');
+        continue; // probar siguiente fuente/proxy
+      }
       const blob=new Blob(chunks,{type:'application/x-shockwave-flash'});
       // Guardar en Cache Storage (se borrará al cerrar/refrescar)
       try{
@@ -1647,6 +1663,13 @@ document.getElementById('fileInput').onchange=async e=>{
   if(currentBlobUrl){ try{URL.revokeObjectURL(currentBlobUrl)}catch{} }
   // Releer el archivo como Blob "propio" (independiente del File handle del input)
   const buf=await f.arrayBuffer();
+  // Validar firma SWF también en archivos locales
+  const _u8=new Uint8Array(buf);
+  const _sig=String.fromCharCode(_u8[0]||0,_u8[1]||0,_u8[2]||0);
+  if(_sig!=='FWS' && _sig!=='CWS' && _sig!=='ZWS'){
+    alert('El archivo "'+f.name+'" no es un SWF válido (firma: "'+_sig+'"). Verifica que sea un .swf real y no un .exe, .zip o renombrado.');
+    e.target.value=''; return;
+  }
   const blob=new Blob([buf],{type:'application/x-shockwave-flash'});
   currentBlobUrl=URL.createObjectURL(blob);
   cachedBlobUrls.push(currentBlobUrl);
