@@ -633,6 +633,12 @@ body.custom-btn-colors .pbtn:active{
   <div class="row">
     <input type="file" id="fileInput" accept=".swf" />
     <input type="url" id="urlInput" placeholder="URL Directo .swf (opcional)" title="Ejemplo https://www.paginaweb.com/games/Super_Mario_Flash_v.2.swf" style="flex:1;min-width:160px" />
+    <select id="proxyTypeSelect" title="Tipo de proxy para la URL">
+      <option value="auto">🔄 Proxy Auto</option>
+      <option value="swf">📦 Proxy SWF</option>
+      <option value="page">🌐 Proxy Página</option>
+      <option value="none">🚫 Sin Proxy</option>
+    </select>
     <div style="position:relative;flex:1;min-width:200px;display:flex;gap:4px">
       <input type="url" id="pageUrlInput" placeholder="URL de Página Web (opcional)" title="Ejemplo https://archive.org/details/redball4 (De la Categoría/Topics Flash Games)" style="flex:1;min-width:0" />
       <button id="pageUrlHistBtn" type="button" title="Historial de páginas web" style="padding:6px 10px">📜</button>
@@ -1113,6 +1119,52 @@ body.custom-btn-colors .pbtn:active{
   </div>
 </div>
 
+<!-- =====================================================
+     FlashTouch Proxy — Configuración del Worker
+     Cambia PROXY_WORKER_URL por la URL de tu Worker de
+     Cloudflare una vez que lo hayas desplegado.
+     ===================================================== -->
+<script>
+/* ── PROXY WORKER ─────────────────────────────────────────────
+   Pon aquí la URL base de tu Cloudflare Worker desplegado.
+   Ejemplo: "https://flashtouch-proxy.tunombre.workers.dev"
+   Deja el valor vacío ("") para desactivar el proxy propio
+   y usar solo los proxies públicos de respaldo.
+   ──────────────────────────────────────────────────────────── */
+const PROXY_WORKER_URL = "flashtouch.juegosemus364.workers.dev"; // ← PON AQUÍ TU URL DE WORKER
+
+/**
+ * Envuelve una URL con el Worker proxy de Cloudflare.
+ * @param {string} rawUrl  URL original a proxear
+ * @param {string} forceType  "swf" | "page" | "auto" | "none"
+ * @returns {string} URL proxeada (o la original si no hay Worker configurado)
+ */
+function workerProxyUrl(rawUrl, forceType) {
+  if (!rawUrl) return rawUrl;
+  rawUrl = rawUrl.trim();
+
+  // Sin proxy configurado o el usuario eligió "Sin Proxy"
+  if (!PROXY_WORKER_URL || forceType === "none") return rawUrl;
+
+  // Si ya pasa por nuestro worker, no lo dobles
+  if (rawUrl.startsWith(PROXY_WORKER_URL)) return rawUrl;
+
+  // Detectar tipo automáticamente si viene en "auto"
+  let type = forceType || "auto";
+  if (type === "auto") {
+    type = /\.swf(\?|#|$)/i.test(rawUrl) ? "swf" : "page";
+  }
+
+  return `${PROXY_WORKER_URL.replace(/\/$/, "")}/proxy?url=${encodeURIComponent(rawUrl)}&type=${type}`;
+}
+
+/** Devuelve el tipo de proxy seleccionado por el usuario en el <select>. */
+function getSelectedProxyType() {
+  const sel = document.getElementById("proxyTypeSelect");
+  return sel ? sel.value : "auto";
+}
+</script>
+
 <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 
     
@@ -1523,8 +1575,14 @@ function hideLoading(){ document.getElementById('loadingMsg').style.display='non
 // devuelve una blob URL local para que Ruffle lo cargue como archivo.
 async function downloadSwfToCache(swfUrl){
   showLoading('Descargando juego…');
-  // Lista de proxies (algunos servidores bloquean CORS). Probamos directo primero.
-  const sources=[
+  // Lista de proxies (algunos servidores bloquean CORS).
+  // Si hay Worker configurado, se usa primero como proxy principal.
+  const proxyType = getSelectedProxyType();
+  const workerSrc = (PROXY_WORKER_URL && proxyType !== "none")
+    ? workerProxyUrl(swfUrl, proxyType === "page" ? "swf" : proxyType)
+    : null;
+  const sources = [
+    ...(workerSrc && workerSrc !== swfUrl ? [workerSrc] : []),
     swfUrl,
     'https://corsproxy.io/?'+encodeURIComponent(swfUrl),
     'https://api.allorigins.win/raw?url='+encodeURIComponent(swfUrl),
@@ -1630,8 +1688,12 @@ document.getElementById('fileInput').onchange=async e=>{
 document.getElementById('loadUrlBtn').onclick=async()=>{
   const u=document.getElementById('urlInput').value.trim();
   const pageUrl=document.getElementById('pageUrlInput').value.trim();
-  // Si el campo de URL .swf apunta directamente a un .swf, cargarlo.
-  if(u && /\.swf(\?|#|$)/i.test(u)){ await mountPlayerFromUrl(u); return; }
+  // Si el campo de URL .swf apunta directamente a un .swf, cargarlo (con proxy si procede).
+  if(u && /\.swf(\?|#|$)/i.test(u)){
+    const finalUrl = workerProxyUrl(u, getSelectedProxyType());
+    await mountPlayerFromUrl(finalUrl);
+    return;
+  }
   // Si el campo "URL .swf" en realidad apunta a una página (html/php/sin extensión),
   // tratarla como página web y buscar el .swf dentro.
   const target = pageUrl || u;
@@ -1660,6 +1722,10 @@ document.getElementById('loadUrlBtn').onclick=async()=>{
    - Detecta rutas relativas/absolutas (ej. /juegoflash.swf, ./game.swf, swf/x.swf).
 */
 const _PROXIES=[
+  // Worker propio (primer intento cuando está configurado)
+  u=>(PROXY_WORKER_URL && getSelectedProxyType()!=='none')
+       ? workerProxyUrl(u, 'page')
+       : 'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
   u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
   u=>'https://corsproxy.io/?'+encodeURIComponent(u),
   u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
