@@ -253,7 +253,7 @@ html[data-theme="dark"] .joy .stick{background:linear-gradient(145deg,#3a4255,#1
   border:1px solid var(--border);
   border-radius:12px;
   display:flex;align-items:center;justify-content:center;
-  font-size:calc(18px * var(--btn-scale, 1) * var(--ind-scale, 1));
+  font-size:calc(18px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--lbl-scale, 1));
   color:var(--txt);font-weight:600;
   pointer-events:auto;touch-action:none;
   user-select:none;-webkit-user-select:none;
@@ -272,7 +272,7 @@ html[data-theme="dark"] .joy .stick{background:linear-gradient(145deg,#3a4255,#1
   border:1px solid var(--border);
   border-radius:14px;
   display:flex;align-items:center;justify-content:center;
-  font-size:calc(14px * var(--btn-scale, 1) * var(--ind-scale, 1));
+  font-size:calc(14px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--lbl-scale, 1));
   font-weight:600;color:var(--txt);
   pointer-events:auto;touch-action:none;
   user-select:none;-webkit-user-select:none;
@@ -294,11 +294,11 @@ html[data-theme="dark"] .joy .stick{background:linear-gradient(145deg,#3a4255,#1
   border-radius:12px;
   padding:10px 12px;
   box-shadow:0 10px 32px rgba(15,23,42,.18);
-  align-items:center;gap:10px;font-size:12px;color:var(--txt);
-  min-width:220px;
+  align-items:center;gap:8px 10px;flex-wrap:wrap;font-size:12px;color:var(--txt);
+  min-width:240px;max-width:min(94vw,420px);
 }
 #sizePop.on{display:flex}
-#sizePop input[type=range]{flex:1;min-width:100px;padding:0;margin:0}
+#sizePop input[type=range]{flex:1;min-width:90px;padding:0;margin:0}
 #sizePop .lbl{color:var(--muted);font-size:11px;white-space:nowrap;font-weight:500}
 #sizePop .val{font-weight:700;color:var(--accent2);min-width:36px;text-align:right}
 #sizePop button{padding:4px 8px;font-size:11px}
@@ -520,10 +520,10 @@ body.touch-off #fsEditMenu{display:none !important}
               height:calc(54px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1))}
   .ab{width:calc(52px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1));
       height:calc(52px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1));
-      font-size:calc(18px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1))}
+      font-size:calc(18px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1) * var(--lbl-scale, 1))}
   .pbtn{width:calc(54px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1));
         height:calc(54px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1));
-        font-size:calc(14px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1))}
+        font-size:calc(14px * var(--btn-scale, 1) * var(--ind-scale, 1) * var(--mobile-scale, 1) * var(--lbl-scale, 1))}
 }
 
 /* ===== Landscape sin fullscreen ===== */
@@ -632,8 +632,22 @@ body.custom-btn-colors .pbtn:active{
   </h1>
   <div class="row">
     <input type="file" id="fileInput" accept=".swf" />
-    <input type="url" id="urlInput" placeholder="URL .swf (opcional)" style="flex:1;min-width:160px" />
-    <input type="url" id="pageUrlInput" placeholder="Cargar Juego por Página Web" style="flex:1;min-width:200px" />
+    <input type="url" id="urlInput" placeholder="URL Directo .swf (opcional)" title="Ejemplo https://www.paginaweb.com/games/Super_Mario_Flash_v.2.swf" style="flex:1;min-width:160px" />
+    <div style="position:relative;flex:1;min-width:200px;display:flex;gap:4px">
+      <input type="url" id="pageUrlInput" placeholder="URL de Página Web (opcional)" title="Ejemplo https://archive.org/details/redball4 (De la Categoría/Topics Flash Games)" style="flex:1;min-width:0" />
+      <button id="pageUrlHistBtn" type="button" title="Historial de páginas web" style="padding:6px 10px">📜</button>
+      <button id="clearAllBtn" type="button" class="danger" title="Limpiar URLs, detener juego y borrar caché" style="padding:6px 10px">🧹</button>
+      <div id="pageUrlHistPanel" style="display:none;position:fixed;background:var(--panel);border:1px solid var(--accent2);border-radius:10px;box-shadow:0 10px 32px rgba(0,0,0,.45);z-index:2147483646;max-height:60vh;overflow:auto;padding:6px;font-size:12px;color:var(--txt)">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;font-weight:600;color:var(--muted)">
+          <span>📜 Historial (100 slots)</span>
+          <button type="button" id="pageUrlHistClear" class="danger" style="padding:2px 8px;font-size:11px">Borrar todo</button>
+        </div>
+        <div style="padding:4px 6px">
+          <input type="search" id="pageUrlHistSearch" placeholder="🔍 Buscar en historial..." autocomplete="off" style="width:100%;box-sizing:border-box;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--txt);font-size:12px" />
+        </div>
+        <div id="pageUrlHistList"></div>
+      </div>
+    </div>
     <button id="loadUrlBtn">Cargar URL</button>
     <button id="pauseBtn" class="warn">⏸ Pausa</button>
     <button id="stopBtn" class="danger">⏹ Detener</button>
@@ -775,9 +789,16 @@ body.custom-btn-colors .pbtn:active{
 
 <!-- Popover de tamaño individual (barrita flotante en modo edición) -->
 <div id="sizePop">
+  <select id="sizePopScope" title="Aplicar a..." style="display:none;font-size:11px;padding:2px 4px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--txt)">
+    <option value="self">Solo esta flecha</option>
+    <option value="all">Todas las flechas</option>
+  </select>
   <span class="lbl">📏 Tamaño:</span>
   <input type="range" id="sizePopRange" min="50" max="250" step="5" value="100" />
   <span class="val" id="sizePopVal">100%</span>
+  <span class="lbl" style="margin-left:6px">🔤 Letra:</span>
+  <input type="range" id="sizePopFontRange" min="50" max="250" step="5" value="100" />
+  <span class="val" id="sizePopFontVal">100%</span>
   <button id="sizePopMap" title="Asignar tecla">⌨️</button>
   <button id="sizePopClose">✕</button>
 </div>
@@ -1083,6 +1104,7 @@ body.custom-btn-colors .pbtn:active{
       • En <b>⚙️ Calibrar</b> ajusta sensibilidad, zona muerta, visibilidad y tamaño <b>global</b> de los botones.<br>
       • En móvil, <b>⛶ Pantalla completa</b> fuerza horizontal y mantiene los controles visibles.<br>
       • En móvil el <b>táctil dentro del reproductor</b> sirve como si fuera <b>clic izquierdo</b>.<br>
+      • En móvil si los <b> botones táctiles </b>se mueven de lugar, restablezca la configuración en <b>↺ Restaurar</b> o use la opción de <b> 📂 Importar o 💾 Cargar Posición de Botones Tactiles<br>
       <span style="display:inline-block;margin-top:8px;padding:6px 8px;border-radius:6px;background:rgba(255,180,0,.12);color:var(--muted);border:1px solid rgba(255,180,0,.25)">⚠️ Está pagina web aún está en desarrollo, posiblemente se puedan presentar algún bug o problema.</span>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
@@ -1097,14 +1119,16 @@ body.custom-btn-colors .pbtn:active{
 <script>
 /* ---------- Lista COMPLETA de teclas del teclado ---------- */
 const KEY_LIST = [
-  {g:'Especiales',k:['Space','Enter','Shift','Control','Alt','Tab','Escape','Backspace','Delete','Insert','Home','End','PageUp','PageDown','CapsLock']},
+  {g:'Especiales',k:['Space','Enter','Shift','Control','Alt','AltGr','Meta','ContextMenu','Tab','Escape','Backspace','Delete','Insert','Home','End','PageUp','PageDown','CapsLock','NumLock','ScrollLock','PrintScreen','Pause']},
   {g:'Flechas',k:['ArrowUp','ArrowDown','ArrowLeft','ArrowRight']},
-  {g:'Letras',k:'abcdefghijklmnopqrstuvwxyz'.split('')},
-  {g:'Mayúsculas',k:'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')},
+  {g:'Letras minúsculas',k:'abcdefghijklmnopqrstuvwxyz'.split('')},
+  {g:'Letras mayúsculas',k:'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')},
+  {g:'Letras españolas',k:['ñ','Ñ','ç','Ç','á','é','í','ó','ú','Á','É','Í','Ó','Ú','ü','Ü']},
   {g:'Números',k:'0123456789'.split('')},
-  {g:'Símbolos',k:['-','=','[',']','\\',';',"'",',','.','/','`','!','@','#','$','%','^','&','*','(',')','_','+','{','}','|',':','"','<','>','?','~']},
-  {g:'Numpad',k:['Numpad0','Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9','NumpadAdd','NumpadSubtract','NumpadMultiply','NumpadDivide','NumpadEnter','NumpadDecimal']},
-  {g:'Función',k:Array.from({length:12},(_,i)=>'F'+(i+1))},
+  {g:'Símbolos',k:['-','=','[',']','\\',';',"'",',','.','/','`','!','@','#','$','%','^','&','*','(',')','_','+','{','}','|',':','"','<','>','?','~','¡','¿','º','ª','€','£','¥','§','°','±','×','÷','¬']},
+  {g:'Numpad',k:['Numpad0','Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9','NumpadAdd','NumpadSubtract','NumpadMultiply','NumpadDivide','NumpadEnter','NumpadDecimal','NumpadEqual','NumpadComma']},
+  {g:'Función',k:Array.from({length:24},(_,i)=>'F'+(i+1))},
+  {g:'Multimedia',k:['MediaPlayPause','MediaStop','MediaTrackNext','MediaTrackPrevious','AudioVolumeUp','AudioVolumeDown','AudioVolumeMute']},
 ];
 function buildKeySelect(sel){
   sel.innerHTML='';
@@ -1124,6 +1148,7 @@ const defaults = {
   positionsFS:{},                        // posiciones por id en modo PANTALLA COMPLETA
   positionsWin:{},                       // posiciones por id en modo VENTANA / VERTICAL
   sizes:{},                              // tamaño individual por id (1.0 = 100%)
+  fontSizes:{},                          // tamaño de letra individual por id (1.0 = 100%)
   pad:[
     {key:'Space',label:'SPACE'}
   ],
@@ -1473,6 +1498,7 @@ async function clearSwfCache(){
   try{
     for(const u of cachedBlobUrls){ try{URL.revokeObjectURL(u)}catch{} }
     cachedBlobUrls=[];
+    if(currentBlobUrl){ try{URL.revokeObjectURL(currentBlobUrl)}catch{} currentBlobUrl=null; }
     if('caches' in window){ await caches.delete(SWF_CACHE_NAME); }
   }catch{}
 }
@@ -1584,24 +1610,40 @@ async function mountPlayerFromUrl(swfUrl){
   }
 }
 
-document.getElementById('fileInput').onchange=e=>{
+document.getElementById('fileInput').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
-  if(currentBlobUrl)URL.revokeObjectURL(currentBlobUrl);
-  currentBlobUrl=URL.createObjectURL(f);mountPlayer(currentBlobUrl);
+  if(currentBlobUrl){ try{URL.revokeObjectURL(currentBlobUrl)}catch{} }
+  // Releer el archivo como Blob "propio" (independiente del File handle del input)
+  const buf=await f.arrayBuffer();
+  const blob=new Blob([buf],{type:'application/x-shockwave-flash'});
+  currentBlobUrl=URL.createObjectURL(blob);
+  cachedBlobUrls.push(currentBlobUrl);
+  // Guardar también en Cache Storage temporal (se borra al detener/refrescar)
+  try{
+    if('caches' in window){
+      const cache=await caches.open(SWF_CACHE_NAME);
+      await cache.put('local://'+encodeURIComponent(f.name), new Response(blob.slice(0),{headers:{'Content-Type':'application/x-shockwave-flash'}}));
+    }
+  }catch{}
+  mountPlayer(currentBlobUrl);
 };
 document.getElementById('loadUrlBtn').onclick=async()=>{
   const u=document.getElementById('urlInput').value.trim();
   const pageUrl=document.getElementById('pageUrlInput').value.trim();
-  if(u){ await mountPlayerFromUrl(u); return; }
-  if(!pageUrl){ alert('Ingresa una URL de archivo .swf o una URL de página web.'); return; }
-  // Buscar .swf dentro del código fuente de una página web (juegos Ruffle)
+  // Si el campo de URL .swf apunta directamente a un .swf, cargarlo.
+  if(u && /\.swf(\?|#|$)/i.test(u)){ await mountPlayerFromUrl(u); return; }
+  // Si el campo "URL .swf" en realidad apunta a una página (html/php/sin extensión),
+  // tratarla como página web y buscar el .swf dentro.
+  const target = pageUrl || u;
+  if(!target){ alert('Ingresa una URL de archivo .swf o una URL de página web (.html, .php, etc.).'); return; }
   const btn=document.getElementById('loadUrlBtn');
   const oldTxt=btn.textContent;
   btn.textContent='Buscando...'; btn.disabled=true;
   try{
-    const swfUrl=await findSwfInPage(pageUrl);
+    const swfUrl=await findSwfInPage(target);
     if(!swfUrl){ alert('No se encontró ningún archivo .swf en la página indicada.'); return; }
     document.getElementById('urlInput').value=swfUrl;
+    try{ pageUrlHistAdd(target, swfUrl); }catch{}
     await mountPlayerFromUrl(swfUrl);
   }catch(err){
     console.error(err);
@@ -1611,44 +1653,262 @@ document.getElementById('loadUrlBtn').onclick=async()=>{
   }
 };
 
-async function findSwfInPage(pageUrl){
-  // Lista de proxies CORS (se prueban en orden)
-  const proxies=[
-    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-    u=>'https://corsproxy.io/?'+encodeURIComponent(u),
-    u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
-  ];
-  let html=null, lastErr=null;
-  for(const mk of proxies){
+/* ===== Búsqueda inteligente de .swf en una página (.html, .php, etc.) =====
+   - Soporta cualquier URL (incluidas terminadas en .php o sin extensión).
+   - Explora HTML, scripts inline y scripts externos.
+   - Sigue iframes 1 nivel (frames de juegos Ruffle).
+   - Detecta rutas relativas/absolutas (ej. /juegoflash.swf, ./game.swf, swf/x.swf).
+*/
+const _PROXIES=[
+  u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  u=>'https://corsproxy.io/?'+encodeURIComponent(u),
+  u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
+  u=>'https://thingproxy.freeboard.io/fetch/'+u,
+];
+async function fetchViaProxy(url){
+  let lastErr=null;
+  for(const mk of _PROXIES){
     try{
-      const r=await fetch(mk(pageUrl),{cache:'no-store'});
-      if(r.ok){ html=await r.text(); if(html && html.length>0) break; }
+      const r=await fetch(mk(url),{cache:'no-store'});
+      if(r.ok){ const t=await r.text(); if(t) return t; }
     }catch(e){ lastErr=e; }
   }
-  if(!html) throw new Error('No se pudo descargar la página (CORS). '+(lastErr?.message||''));
+  if(lastErr) throw lastErr;
+  return null;
+}
 
-  // Buscar referencias a .swf en el HTML
+function _extractSwfCandidates(text, baseUrl){
   const candidates=new Set();
+  const resolve=(rel)=>{ try{ return new URL(rel, baseUrl).href; }catch{ return rel; } };
+
+  // 1) Parseo DOM si parece HTML
+  try{
+    const doc=new DOMParser().parseFromString(text,'text/html');
+    doc.querySelectorAll('embed[src], object[data], iframe[src]').forEach(n=>{
+      const v=n.getAttribute('src')||n.getAttribute('data');
+      if(v && /\.swf(\?|#|$)/i.test(v)) candidates.add(v);
+    });
+    doc.querySelectorAll('param').forEach(p=>{
+      const nm=(p.getAttribute('name')||'').toLowerCase();
+      const v=p.getAttribute('value');
+      if(v && (nm==='movie'||nm==='src'||nm==='data'||nm==='flashvars') && /\.swf(\?|#|$)/i.test(v)) candidates.add(v.match(/[^"'\s=&]+\.swf[^"'\s&]*/i)?.[0]||v);
+    });
+    doc.querySelectorAll('[data-swf-url],[data-swf],[data-src],[data-file],[data-url],[data-movie]').forEach(n=>{
+      ['data-swf-url','data-swf','data-src','data-file','data-url','data-movie'].forEach(a=>{
+        const v=n.getAttribute(a);
+        if(v && /\.swf(\?|#|$)/i.test(v)) candidates.add(v);
+      });
+    });
+    doc.querySelectorAll('a[href]').forEach(a=>{
+      const v=a.getAttribute('href');
+      if(v && /\.swf(\?|#|$)/i.test(v)) candidates.add(v);
+    });
+  }catch{}
+
+  // 2) Regex global — cualquier ruta que termine en .swf (con o sin comillas)
   const regexes=[
-    /["'\(]([^"'\(\)\s<>]+\.swf(?:\?[^"'\(\)\s<>]*)?)["'\)]/gi,
+    /["'`\(]\s*([^"'`\(\)\s<>]+\.swf(?:\?[^"'`\(\)\s<>]*)?)\s*["'`\)]/gi,
     /\bsrc\s*=\s*["']([^"']+\.swf[^"']*)["']/gi,
     /\bdata\s*=\s*["']([^"']+\.swf[^"']*)["']/gi,
     /\bhref\s*=\s*["']([^"']+\.swf[^"']*)["']/gi,
-    /data-swf-url\s*=\s*["']([^"']+)["']/gi,
-    /data-src\s*=\s*["']([^"']+\.swf[^"']*)["']/gi,
+    /\burl\s*[:=]\s*["']([^"']+\.swf[^"']*)["']/gi,
+    /\bmovie\s*[:=]\s*["']([^"']+\.swf[^"']*)["']/gi,
+    /\bfile\s*[:=]\s*["']([^"']+\.swf[^"']*)["']/gi,
+    /load\s*\(\s*["']([^"']+\.swf[^"']*)["']\s*\)/gi,
+    // Sin comillas: paths absolutos o relativos sueltos en JS/HTML
+    /(?:^|[\s=:,\(\[\{>])((?:https?:\/\/|\.{0,2}\/)[^\s"'<>\)\]\}]+\.swf(?:\?[^\s"'<>\)\]\}]*)?)/gi,
   ];
   for(const re of regexes){
-    let m; while((m=re.exec(html))!==null){ if(m[1]) candidates.add(m[1]); }
+    let m; while((m=re.exec(text))!==null){ if(m[1]) candidates.add(m[1]); }
   }
-  if(candidates.size===0) return null;
 
-  // Resolver a URL absoluta
-  const base=pageUrl;
-  const resolve=(rel)=>{ try{ return new URL(rel, base).href; }catch{ return rel; } };
-  // Preferir el primer candidato razonable
-  const list=[...candidates].map(resolve).filter(u=>/\.swf(\?|$)/i.test(u));
-  return list[0]||null;
+  return [...candidates].map(resolve).filter(u=>/\.swf(\?|#|$)/i.test(u));
 }
+
+function _rankSwf(list){
+  return [...new Set(list)].sort((a,b)=>{
+    const ta=/(thumb|preview|banner|icon|logo|ad|ads|preloader)/i.test(a)?1:0;
+    const tb=/(thumb|preview|banner|icon|logo|ad|ads|preloader)/i.test(b)?1:0;
+    return ta-tb;
+  });
+}
+
+async function findSwfInPage(pageUrl, depth=0){
+  // Si la URL ya es un .swf directo, devolverla.
+  if(/\.swf(\?|#|$)/i.test(pageUrl)) return pageUrl;
+
+  let html;
+  try{ html=await fetchViaProxy(pageUrl); }
+  catch(e){ throw new Error('No se pudo descargar la página (CORS). '+(e?.message||'')); }
+  if(!html) throw new Error('La página está vacía o bloqueada por CORS.');
+
+  // 1) Buscar .swf en el HTML/JS de esta página
+  let found=_extractSwfCandidates(html, pageUrl);
+  if(found.length){ const r=_rankSwf(found); if(r[0]) return r[0]; }
+
+  // 2) Explorar scripts externos (en paralelo, máx 8)
+  try{
+    const doc=new DOMParser().parseFromString(html,'text/html');
+    const scripts=[...doc.querySelectorAll('script[src]')]
+      .map(s=>{ try{ return new URL(s.getAttribute('src'), pageUrl).href; }catch{ return null; } })
+      .filter(Boolean).slice(0,8);
+    const results=await Promise.allSettled(scripts.map(s=>fetchViaProxy(s).then(t=>({src:s,t}))));
+    for(const res of results){
+      if(res.status==='fulfilled' && res.value?.t){
+        const c=_extractSwfCandidates(res.value.t, res.value.src);
+        if(c.length){ const r=_rankSwf(c); if(r[0]) return r[0]; }
+      }
+    }
+
+    // 3) Seguir iframes 1 nivel (juegos comúnmente embebidos en /play.php?game=...)
+    if(depth<1){
+      const frames=[...doc.querySelectorAll('iframe[src]')]
+        .map(f=>{ try{ return new URL(f.getAttribute('src'), pageUrl).href; }catch{ return null; } })
+        .filter(Boolean).slice(0,4);
+      for(const fu of frames){
+        try{
+          const sw=await findSwfInPage(fu, depth+1);
+          if(sw) return sw;
+        }catch{}
+      }
+    }
+  }catch{}
+
+  return null;
+}
+
+/* ===== Historial de URL de página web (100 slots) ===== */
+const PAGEURL_HIST_KEY='flashtouch_pageurl_hist_v1';
+const PAGEURL_HIST_MAX=100;
+function pageUrlHistLoad(){
+  try{ return JSON.parse(localStorage.getItem(PAGEURL_HIST_KEY)||'[]'); }catch{ return []; }
+}
+function pageUrlHistSave(arr){
+  try{ localStorage.setItem(PAGEURL_HIST_KEY, JSON.stringify(arr.slice(0,PAGEURL_HIST_MAX))); }catch{}
+}
+function pageUrlHistAdd(pageUrl, swfUrl){
+  if(!pageUrl) return;
+  let arr=pageUrlHistLoad();
+  arr=arr.filter(it=>it.pageUrl!==pageUrl);
+  let swfName='';
+  try{ swfName=decodeURIComponent((swfUrl||'').split('/').pop().split('?')[0]||''); }catch{ swfName=(swfUrl||'').split('/').pop()||''; }
+  arr.unshift({pageUrl, swfUrl: swfUrl||'', swfName, ts: Date.now()});
+  pageUrlHistSave(arr);
+  pageUrlHistRender();
+}
+function pageUrlHistRender(){
+  const list=document.getElementById('pageUrlHistList');
+  if(!list) return;
+  let arr=pageUrlHistLoad();
+  const searchEl=document.getElementById('pageUrlHistSearch');
+  const q=(searchEl?.value||'').trim().toLowerCase();
+  // Conservar índices originales para borrar correctamente
+  let view=arr.map((it,origIdx)=>({it,origIdx}));
+  if(q){
+    view=view.filter(({it})=>{
+      return (it.swfName||'').toLowerCase().includes(q)
+          || (it.pageUrl||'').toLowerCase().includes(q)
+          || (it.swfUrl||'').toLowerCase().includes(q);
+    });
+  }
+  if(view.length===0){
+    list.innerHTML='<div style="padding:10px;color:var(--muted);text-align:center">'+(q?'Sin coincidencias':'Sin historial todavía')+'</div>';
+    return;
+  }
+  list.innerHTML='';
+  view.forEach(({it,origIdx})=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:6px;padding:6px;border-bottom:1px solid var(--border);cursor:pointer';
+    row.innerHTML=`
+      <div style="flex:1;min-width:0;overflow:hidden">
+        <div style="font-weight:600;color:var(--accent2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${it.swfName||''}">🎮 ${it.swfName||'(sin nombre .swf)'}</div>
+        <div style="color:var(--muted);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${it.pageUrl}">${it.pageUrl}</div>
+      </div>
+      <button type="button" class="danger" data-act="del" data-idx="${origIdx}" style="padding:2px 8px;font-size:11px" title="Eliminar slot">✕</button>
+    `;
+    row.onclick=(e)=>{
+      if(e.target.closest('[data-act="del"]')) return;
+      document.getElementById('pageUrlInput').value=it.pageUrl;
+      if(it.swfUrl){ document.getElementById('urlInput').value=it.swfUrl; }
+      document.getElementById('pageUrlHistPanel').style.display='none';
+    };
+    row.querySelector('[data-act="del"]').onclick=(ev)=>{
+      ev.stopPropagation();
+      const a=pageUrlHistLoad(); a.splice(origIdx,1); pageUrlHistSave(a); pageUrlHistRender();
+    };
+    list.appendChild(row);
+  });
+}
+(function initPageUrlHist(){
+  const btn=document.getElementById('pageUrlHistBtn');
+  const panel=document.getElementById('pageUrlHistPanel');
+  const clear=document.getElementById('pageUrlHistClear');
+  if(!btn||!panel) return;
+  function positionHistPanel(){
+    const r=btn.getBoundingClientRect();
+    const w=Math.min(420, Math.max(260, window.innerWidth-16));
+    let left=Math.min(window.innerWidth-w-8, Math.max(8, r.right-w));
+    panel.style.width=w+'px';
+    panel.style.left=left+'px';
+    panel.style.top=(r.bottom+4)+'px';
+  }
+  btn.onclick=(e)=>{
+    e.stopPropagation();
+    const open=panel.style.display==='block';
+    panel.style.display=open?'none':'block';
+    if(!open){
+      // Re-anclar al fullscreenElement para superponerse a FPS y Controles Touch
+      const host = document.fullscreenElement || document.body;
+      if(panel.parentElement!==host) host.appendChild(panel);
+      positionHistPanel();
+      pageUrlHistRender();
+    }
+  };
+  window.addEventListener('resize',()=>{ if(panel.style.display==='block') positionHistPanel(); });
+  window.addEventListener('scroll',()=>{ if(panel.style.display==='block') positionHistPanel(); },true);
+  clear.onclick=()=>{ if(confirm('¿Borrar TODO el historial?')){ pageUrlHistSave([]); const s=document.getElementById('pageUrlHistSearch'); if(s)s.value=''; pageUrlHistRender(); } };
+  const searchEl=document.getElementById('pageUrlHistSearch');
+  if(searchEl){
+    searchEl.addEventListener('input',()=>pageUrlHistRender());
+    searchEl.addEventListener('mousedown',(e)=>e.stopPropagation());
+  }
+  document.addEventListener('mousedown',(e)=>{
+    if(panel.style.display!=='block') return;
+    if(panel.contains(e.target)||btn.contains(e.target)) return;
+    panel.style.display='none';
+  });
+})();
+
+/* ---------- Botón 🧹 Limpiar todo: URLs + juego + caché ---------- */
+(function initClearAllBtn(){
+  const btn=document.getElementById('clearAllBtn');
+  if(!btn) return;
+  btn.onclick=async()=>{
+    if(!confirm('¿Eliminar URLs cargadas, detener el juego y limpiar la caché?')) return;
+    try{
+      // Vaciar inputs de URL
+      const u1=document.getElementById('urlInput'); if(u1) u1.value='';
+      const u2=document.getElementById('pageUrlInput'); if(u2) u2.value='';
+      // Detener el juego en reproducción
+      try{ player?.remove?.(); }catch{}
+      const ph=document.getElementById('player'); if(ph) ph.innerHTML='';
+      const em=document.getElementById('emptyMsg'); if(em) em.style.display='flex';
+      try{ hideLoading(); }catch{}
+      player=null;
+      const pb=document.getElementById('pauseBtn'); if(pb) pb.textContent='⏸ Pausa';
+      const sb=document.getElementById('stopBtn'); if(sb){ sb.textContent='⏹ Detener'; sb.dataset.state=''; }
+      // Limpiar caché del SWF
+      try{ await clearSwfCache(); }catch{}
+      // Limpiar Cache Storage genérico (todas las cachés del origen)
+      try{
+        if('caches' in window){
+          const keys=await caches.keys();
+          await Promise.all(keys.map(k=>caches.delete(k)));
+        }
+      }catch{}
+    }catch(err){ console.warn('clearAllBtn',err); }
+  };
+})();
 document.getElementById('pauseBtn').onclick=()=>{
   if(!player)return;
   const pb=document.getElementById('pauseBtn');
@@ -1682,9 +1942,18 @@ document.getElementById('stopBtn').onclick=()=>{
   // Borrar el juego del caché del navegador
   clearSwfCache();
 };
-document.getElementById('reloadBtn').onclick=()=>{
-  const u=currentBlobUrl||document.getElementById('urlInput').value.trim();
-  if(u){ mountPlayer(u); document.getElementById('pauseBtn').textContent='⏸ Pausa'; }
+document.getElementById('reloadBtn').onclick=async()=>{
+  // Si aún tenemos un blob vivo, recargarlo. Si no, re-descargar desde la URL.
+  if(currentBlobUrl){
+    mountPlayer(currentBlobUrl);
+    document.getElementById('pauseBtn').textContent='⏸ Pausa';
+    return;
+  }
+  const urlSwf=document.getElementById('urlInput').value.trim();
+  if(urlSwf && /\.swf(\?|#|$)/i.test(urlSwf)){
+    await mountPlayerFromUrl(urlSwf);
+    document.getElementById('pauseBtn').textContent='⏸ Pausa';
+  }
 };
 
 /* ---------- Pantalla completa con landscape forzado ---------- */
@@ -2133,27 +2402,54 @@ function resolveKey(k){
   // Fallback genérico
   return {code:k, keyCode:0, key:k};
 }
-function sendKey(type,k){
-  const info=resolveKey(k); if(!info) return;
+function _makeKeyEvent(type, info){
   const init={
     key: info.key, code: info.code,
-    keyCode: info.keyCode, which: info.keyCode, charCode: type==='keypress'?info.keyCode:0,
+    keyCode: info.keyCode, which: info.keyCode,
+    charCode: type==='keypress'?info.keyCode:0,
     bubbles:true, cancelable:true, composed:true,
-    location:0, repeat:false,
-    view: window
+    location:0, repeat:false, view: window
   };
-  // Disparamos en MÚLTIPLES targets — Ruffle escucha en su propio elemento;
-  // algunos juegos escuchan en window/document/body.
+  const ev = new KeyboardEvent(type, init);
+  // Los navegadores ignoran keyCode/which/charCode en el constructor (quedan 0).
+  // Sobre-escribimos para que los juegos Flash los detecten correctamente.
+  try{
+    Object.defineProperty(ev,'keyCode', {get:()=>info.keyCode, configurable:true});
+    Object.defineProperty(ev,'which',   {get:()=>info.keyCode, configurable:true});
+    Object.defineProperty(ev,'charCode',{get:()=> type==='keypress'?info.keyCode:0, configurable:true});
+    Object.defineProperty(ev,'key',     {get:()=>info.key,     configurable:true});
+    Object.defineProperty(ev,'code',    {get:()=>info.code,    configurable:true});
+  }catch{}
+  return ev;
+}
+function sendKey(type,k){
+  const info=resolveKey(k); if(!info) return;
   const targets=[];
   if(player) targets.push(player);
-  // Ruffle expone un shadowRoot con un <canvas>; intentamos también
   if(player&&player.shadowRoot){
     const c=player.shadowRoot.querySelector('canvas');
     if(c) targets.push(c);
+    // Algunos juegos escuchan también en el shadowRoot
+    targets.push(player.shadowRoot);
   }
+  // Foco en body para que el evento "burbujee" hacia los listeners globales
+  try{ if(document.activeElement && document.activeElement.blur) {/* keep */} }catch{}
   targets.push(window, document, document.body);
+  // Si hay un iframe (algunos players lo usan), también disparamos dentro
+  document.querySelectorAll('iframe').forEach(f=>{
+    try{
+      if(f.contentWindow) targets.push(f.contentWindow);
+      if(f.contentDocument) targets.push(f.contentDocument);
+    }catch{}
+  });
   for(const t of targets){
-    try{ t.dispatchEvent(new KeyboardEvent(type, init)); }catch{}
+    try{ t.dispatchEvent(_makeKeyEvent(type, info)); }catch{}
+  }
+  // Para 'keydown' enviamos también 'keypress' con caracteres imprimibles
+  if(type==='keydown' && info.keyCode>=32 && info.keyCode!==127){
+    for(const t of targets){
+      try{ t.dispatchEvent(_makeKeyEvent('keypress', info)); }catch{}
+    }
   }
 }
 const heldKeys=new Set();
@@ -2354,14 +2650,24 @@ editChk.onchange=()=>document.body.classList.toggle('editing',editChk.checked);
 
 function makeDraggable(el){
   let dragging=false,moved=false,sx=0,sy=0,ox=0,oy=0;
-  // El contenedor posicional REAL siempre es #touchLayer (los .ab/.pbtn están
-  // dentro de .arrows/.pad que NO tienen position, por lo que el position:
-  // absolute resuelve contra #touchLayer). Usamos siempre éste para que el
-  // botón se pueda mover por TODA la pantalla (vertical y fullscreen).
+  // Para arrastre en grupo (todas las flechas)
+  let groupEls=null, groupStarts=null;
   const _container=()=>document.getElementById('touchLayer')||el.parentElement;
+  const _isArrowGroupMove=()=>{
+    try{
+      if(!el.classList.contains('ab')) return false;
+      const id=el.dataset.id||'';
+      if(!_isArrowId(id)) return false;
+      // Activo si el popover está abierto sobre CUALQUIER flecha y scope=all,
+      // así el usuario puede arrastrar cualquiera de las flechas y todas se
+      // mueven en grupo manteniendo posiciones relativas.
+      if(!sizePop.classList.contains('on')) return false;
+      if(!sizePopTarget||!_isArrowId(sizePopTarget.id)) return false;
+      return sizePopScope.value==='all';
+    }catch{return false}
+  };
   const start=e=>{
     if(!editChk.checked)return;
-    // No iniciar drag si se tocó el badge eliminar
     if(e.target.classList.contains('delBadge'))return;
     const t=e.touches?e.touches[0]:e;
     dragging=true;moved=false;sx=t.clientX;sy=t.clientY;
@@ -2369,6 +2675,17 @@ function makeDraggable(el){
     const pr=_container().getBoundingClientRect();
     ox=r.left-pr.left;oy=r.top-pr.top;
     el.style.left=ox+'px';el.style.top=oy+'px';el.style.bottom='auto';el.style.right='auto';
+    // Snapshot grupo si aplica
+    groupEls=null; groupStarts=null;
+    if(_isArrowGroupMove()){
+      groupEls=[...document.querySelectorAll('#arrows .ab')];
+      groupStarts=groupEls.map(g=>{
+        const gr=g.getBoundingClientRect();
+        const gx=gr.left-pr.left, gy=gr.top-pr.top;
+        g.style.left=gx+'px'; g.style.top=gy+'px'; g.style.bottom='auto'; g.style.right='auto';
+        return {el:g, x:gx, y:gy};
+      });
+    }
     e.preventDefault?.();e.stopPropagation?.();
   };
   const move=e=>{
@@ -2376,42 +2693,65 @@ function makeDraggable(el){
     const t=e.touches?e.touches[0]:e;
     const dx=t.clientX-sx,dy=t.clientY-sy;
     if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;
-    let nx=ox+dx, ny=oy+dy;
-    // Clamp en vivo contra TODA la pantalla (touchLayer fullscreen): el botón
-    // nunca puede salir de los bordes pero puede ir a CUALQUIER posición de
-    // la pantalla, vertical, horizontal o fullscreen.
     const c=_container();
-    if(c){
-      const pr=c.getBoundingClientRect();
-      const w=el.offsetWidth||40, h=el.offsetHeight||40;
-      const maxX=Math.max(0, pr.width  - w);
-      const maxY=Math.max(0, pr.height - h);
-      if(nx<0)nx=0; else if(nx>maxX)nx=maxX;
-      if(ny<0)ny=0; else if(ny>maxY)ny=maxY;
+    const pr=c?c.getBoundingClientRect():null;
+    // Para flechas: arrastre LIBRE sin bloqueo de bordes (individual o grupo).
+    const _isArrow = el.classList.contains('ab') && _isArrowId(el.dataset.id||'');
+    if(groupStarts){
+      let cdx=dx, cdy=dy;
+      if(pr && !_isArrow){
+        groupStarts.forEach(g=>{
+          const w=g.el.offsetWidth||40, h=g.el.offsetHeight||40;
+          const maxX=Math.max(0,pr.width-w), maxY=Math.max(0,pr.height-h);
+          const minDx=-g.x, maxDx=maxX-g.x;
+          const minDy=-g.y, maxDy=maxY-g.y;
+          if(cdx<minDx)cdx=minDx; else if(cdx>maxDx)cdx=maxDx;
+          if(cdy<minDy)cdy=minDy; else if(cdy>maxDy)cdy=maxDy;
+        });
+      }
+      groupStarts.forEach(g=>{
+        g.el.style.left=(g.x+cdx)+'px';
+        g.el.style.top =(g.y+cdy)+'px';
+      });
+    } else {
+      let nx=ox+dx, ny=oy+dy;
+      if(c && !_isArrow){
+        const w=el.offsetWidth||40, h=el.offsetHeight||40;
+        const maxX=Math.max(0, pr.width  - w);
+        const maxY=Math.max(0, pr.height - h);
+        if(nx<0)nx=0; else if(nx>maxX)nx=maxX;
+        if(ny<0)ny=0; else if(ny>maxY)ny=maxY;
+      }
+      el.style.left=nx+'px';el.style.top=ny+'px';
     }
-    el.style.left=nx+'px';el.style.top=ny+'px';
   };
   const end=()=>{
     if(!dragging)return;dragging=false;
     if(moved){
-      // Si el botón quedó sobre la zona reservada del ✏️ (fullscreen),
-      // empujarlo fuera antes de guardar.
       const reserved=_fsEditReservedRect && _fsEditReservedRect();
-      if(reserved){
-        const c=_container();
-        const pr=c.getBoundingClientRect();
-        const w=el.offsetWidth||40, h=el.offsetHeight||40;
-        let nx=parseFloat(el.style.left)||0, ny=parseFloat(el.style.top)||0;
+      const c=_container();
+      const pr=c.getBoundingClientRect();
+      const _shift=(node)=>{
+        if(!reserved) return;
+        const w=node.offsetWidth||40, h=node.offsetHeight||40;
+        let nx=parseFloat(node.style.left)||0, ny=parseFloat(node.style.top)||0;
         if(_rectsOverlap(nx,ny,w,h,reserved.x,reserved.y,reserved.w,reserved.h)){
           const downY=reserved.y+reserved.h, rightX=reserved.x+reserved.w;
           const maxY=Math.max(0, pr.height-h), maxX=Math.max(0, pr.width-w);
           if(downY+h<=pr.height) ny=Math.min(downY,maxY);
           else if(rightX+w<=pr.width) nx=Math.min(rightX,maxX);
-          el.style.left=nx+'px'; el.style.top=ny+'px';
+          node.style.left=nx+'px'; node.style.top=ny+'px';
         }
+      };
+      if(groupStarts){
+        groupStarts.forEach(g=>{ _shift(g.el); _savePos(g.el.dataset.id, g.el.style.left, g.el.style.top); });
+      } else {
+        _shift(el);
+        _savePos(el.dataset.id, el.style.left, el.style.top);
       }
-      _savePos(el.dataset.id, el.style.left, el.style.top); save();
+      save();
     }
+    groupEls=null; groupStarts=null;
   };
   el.addEventListener('touchstart',start,{passive:false});
   el.addEventListener('touchmove',move,{passive:false});
@@ -3249,8 +3589,16 @@ function applyIndividualSize(id){
   if(s&&s!==1) el.style.setProperty('--ind-scale',s);
   else el.style.removeProperty('--ind-scale');
 }
+function applyIndividualFont(id){
+  const el=document.querySelector(`[data-id="${id}"]`);
+  if(!el)return;
+  const f=(cfg.fontSizes||{})[id];
+  if(f&&f!==1) el.style.setProperty('--lbl-scale',f);
+  else el.style.removeProperty('--lbl-scale');
+}
 function applyAllIndividualSizes(){
   Object.keys(cfg.sizes||{}).forEach(applyIndividualSize);
+  Object.keys(cfg.fontSizes||{}).forEach(applyIndividualFont);
 }
 
 /* ---------- Popover de tamaño individual ---------- */
@@ -3259,11 +3607,14 @@ const sizePopRange=document.getElementById('sizePopRange');
 const sizePopVal=document.getElementById('sizePopVal');
 const sizePopMap=document.getElementById('sizePopMap');
 const sizePopClose=document.getElementById('sizePopClose');
+const sizePopFontRange=document.getElementById('sizePopFontRange');
+const sizePopFontVal=document.getElementById('sizePopFontVal');
 let sizePopTarget=null;     // { el, id, mapTarget }
 function positionSizePop(el){
   const r=el.getBoundingClientRect();
-  // Preferir arriba del botón; si no cabe, debajo
-  const popH=52, popW=240;
+  // Medir dinámicamente porque ahora el popover puede envolverse en 2 filas
+  const popW=Math.min(sizePop.offsetWidth||320, window.innerWidth-16);
+  const popH=sizePop.offsetHeight||80;
   let top=r.top-popH-8;
   if(top<8) top=r.bottom+8;
   let left=r.left+r.width/2-popW/2;
@@ -3271,6 +3622,11 @@ function positionSizePop(el){
   sizePop.style.top=top+'px';
   sizePop.style.left=left+'px';
 }
+const sizePopScope=document.getElementById('sizePopScope');
+const ARROW_IDS_ALL=['arr-up','arr-down','arr-left','arr-right','arr-upleft','arr-upright','arr-downleft','arr-downright'];
+const ARROW_IDS_CARD=['arr-up','arr-down','arr-left','arr-right'];
+const ARROW_IDS_DIAG=['arr-upleft','arr-upright','arr-downleft','arr-downright'];
+function _isArrowId(id){ return ARROW_IDS_ALL.includes(id); }
 function openSizePop(el,id,mapTarget){
   // limpiar selección previa
   document.querySelectorAll('.is-selected').forEach(x=>x.classList.remove('is-selected'));
@@ -3280,6 +3636,18 @@ function openSizePop(el,id,mapTarget){
   const pct=Math.round(cur*100);
   sizePopRange.value=pct;
   sizePopVal.textContent=pct+'%';
+  const curF=(cfg.fontSizes||{})[id]||1;
+  const pctF=Math.round(curF*100);
+  sizePopFontRange.value=pctF;
+  sizePopFontVal.textContent=pctF+'%';
+  // Mostrar selector de alcance solo si el botón es una flecha
+  if(_isArrowId(id)){
+    sizePopScope.style.display='';
+    sizePopScope.value='self';
+  } else {
+    sizePopScope.style.display='none';
+    sizePopScope.value='self';
+  }
   positionSizePop(el);
   sizePop.classList.add('on');
 }
@@ -3293,11 +3661,57 @@ sizePopRange.oninput=()=>{
   const pct=parseInt(sizePopRange.value);
   sizePopVal.textContent=pct+'%';
   const s=pct/100;
-  cfg.sizes[sizePopTarget.id]=s;
-  applyIndividualSize(sizePopTarget.id);
+  let targets=[sizePopTarget.id];
+  if(_isArrowId(sizePopTarget.id)){
+    const scope=sizePopScope.value;
+    if(scope==='all') targets=ARROW_IDS_ALL.slice();
+  }
+  targets.forEach(tid=>{
+    cfg.sizes[tid]=s;
+    applyIndividualSize(tid);
+  });
   // reposicionar popover (el botón cambió de tamaño)
   positionSizePop(sizePopTarget.el);
   save();
+};
+sizePopFontRange.oninput=()=>{
+  if(!sizePopTarget)return;
+  if(!cfg.fontSizes) cfg.fontSizes={};
+  const pct=parseInt(sizePopFontRange.value);
+  sizePopFontVal.textContent=pct+'%';
+  const f=pct/100;
+  let targets=[sizePopTarget.id];
+  if(_isArrowId(sizePopTarget.id) && sizePopScope.value==='all'){
+    targets=ARROW_IDS_ALL.slice();
+  }
+  targets.forEach(tid=>{
+    cfg.fontSizes[tid]=f;
+    applyIndividualFont(tid);
+  });
+  save();
+};
+sizePopScope.onchange=()=>{
+  // Al seleccionar "Todas las flechas": aplicar INMEDIATAMENTE el tamaño actual
+  // del slider a TODAS las flechas (cardinales x4 y diagonales x8), sin
+  // importar sobre cuál se haya abierto el popover.
+  if(!sizePopTarget) return;
+  const scope=sizePopScope.value;
+  if(scope==='all'){
+    const pct=parseInt(sizePopRange.value)||100;
+    const s=pct/100;
+    ARROW_IDS_ALL.forEach(tid=>{
+      cfg.sizes[tid]=s;
+      applyIndividualSize(tid);
+    });
+    sizePopVal.textContent=pct+'%';
+    positionSizePop(sizePopTarget.el);
+    save();
+  } else {
+    const cur=cfg.sizes[sizePopTarget.id]||1;
+    const pct=Math.round(cur*100);
+    sizePopRange.value=pct;
+    sizePopVal.textContent=pct+'%';
+  }
 };
 sizePopMap.onclick=()=>{
   if(!sizePopTarget)return;
@@ -4609,7 +5023,10 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
       it.el.style.right = 'auto';
       it.el.style.bottom = 'auto';
     });
-    try{ persistTouchPositionsForMode(_currentMode()); }catch{}
+    // No persistir el clamp por zoom: si lo guardamos, cada zoom in/out
+    // erosionaría las posiciones originales. Solo se persiste cuando el
+    // usuario MUEVE manualmente un botón (esos handlers ya llaman a
+    // persistTouchPositionsForMode con la posición real).
   }
 
   // Lanzar clamp del cluster al cargar y tras eventos relevantes
@@ -4625,8 +5042,15 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
     window._clampClusterT = setTimeout(_clampAll, 150);
   });
   window.addEventListener('orientationchange', ()=>{
-    setTimeout(_clampAll, 300);
-    setTimeout(_clampAll, 700);
+    // Restaurar las posiciones guardadas para el nuevo sub-modo y luego clamp
+    setTimeout(()=>{
+      try{ _applyPositionsForMode(_currentMode()); }catch{}
+      _clampAll();
+    }, 300);
+    setTimeout(()=>{
+      try{ _applyPositionsForMode(_currentMode()); }catch{}
+      _clampAll();
+    }, 700);
   });
   document.addEventListener('fullscreenchange', ()=>{
     setTimeout(_clampAll, 300);
