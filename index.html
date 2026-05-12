@@ -351,6 +351,25 @@ header.collapsed .row{display:none}
 .modal .field{margin-bottom:12px}
 .modal label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
 .modal input,.modal select{width:100%}
+/* Teclado virtual del mapeador de mando */
+.gp-kb{display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:rgba(0,0,0,.18);padding:10px;border-radius:10px;border:1px solid var(--border);max-height:none;overflow-x:auto;overflow-y:hidden;margin-top:6px;scrollbar-width:thin;width:100%}
+.gp-kb::-webkit-scrollbar{height:8px}
+.gp-kb::-webkit-scrollbar-thumb{background:#3a3f48;border-radius:4px}
+.gp-kb .kbd-row{min-width:max-content}
+.gp-kb .kbd-row{display:flex;gap:4px;justify-content:flex-start;flex-wrap:nowrap}
+.gp-kb .kbd-key{position:relative;min-width:34px;height:38px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text,#e8eaed);background:linear-gradient(180deg,#2a2f38,#1c2026);border:1px solid #3a3f48;border-bottom-width:3px;border-radius:6px;cursor:pointer;user-select:none;transition:transform .08s, box-shadow .15s, background .15s}
+.gp-kb .kbd-key:hover{background:linear-gradient(180deg,#323844,#21262e)}
+.gp-kb .kbd-key:active{transform:translateY(1px);border-bottom-width:2px}
+.gp-kb .kbd-key.wide{min-width:60px}
+.gp-kb .kbd-key.wider{min-width:90px}
+.gp-kb .kbd-key.widest{min-width:160px}
+.gp-kb .kbd-key.assigned{background:linear-gradient(180deg,#1f3a2a,#15291f);border-color:#2c7a4d}
+.gp-kb .kbd-key.capturing{background:linear-gradient(180deg,#3a2f1f,#2a2014);border-color:#c08a3a;box-shadow:0 0 0 2px rgba(217,159,73,.55);animation:gpPulse 1s ease-in-out infinite}
+.gp-kb .kbd-key.flash{box-shadow:0 0 0 2px hsl(var(--primary,210 90% 60%));background:linear-gradient(180deg,#1d3a55,#13283a)}
+.gp-kb .kbd-key .badge{position:absolute;top:-6px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px;line-height:14px;text-align:center;border-radius:7px;background:#2c7a4d;color:#fff;font-weight:700;border:1px solid #16331f}
+@keyframes gpPulse{0%,100%{box-shadow:0 0 0 2px rgba(217,159,73,.55)}50%{box-shadow:0 0 0 4px rgba(217,159,73,.25)}}
+.gp-assigned-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;margin:2px;background:rgba(44,122,77,.18);border:1px solid #2c7a4d;border-radius:10px;font-size:11px;color:#9be0b8}
+.gp-assigned-chip button{all:unset;cursor:pointer;color:#ff9b9b;font-weight:700;padding:0 2px}
 .status{padding:10px;border-radius:10px;font-size:12px;margin-top:10px;text-align:center;font-weight:500}
 .status.detect{background:rgba(217,119,6,.12);color:var(--warn);border:1px solid rgba(217,119,6,.25)}
 .status.saved{background:rgba(5,150,105,.12);color:var(--ok);border:1px solid rgba(5,150,105,.25)}
@@ -672,9 +691,10 @@ body.custom-btn-colors .pbtn:active{
      <button id="qualityBtn" title="Ajustar calidad gráfica del juego">🎚️ Calidad</button>
     <button id="customizeBtn" title="Personalizar colores de botones táctiles">🎨 Personalizar</button>
     <button id="exportBtn" class="ok">💾 Exportar</button>
-    <button id="importBtn">📂 Importar</button>
-    <input type="file" id="importFile" accept=".json" style="display:none" />
-    <button id="resetBtn" class="warn">↺ Restaurar</button>
+     <button id="importBtn">📂 Importar</button>
+     <button id="resetPosBtn" title="Restablecer la ubicación en pantalla de los botones táctiles a los valores de fábrica (no toca tamaños, mapeos ni colores).">↺ Restablecer lugar de botones</button>
+     <input type="file" id="importFile" accept=".json" style="display:none" />
+     <button id="resetBtn" class="warn">↺ Restaurar</button>
     <button id="clearBtn" class="danger">🗑 Borrar config</button>
      <button id="configBtn" title="Configuración avanzada">🛠️ Configuración</button>
     </div>
@@ -784,6 +804,7 @@ body.custom-btn-colors .pbtn:active{
   <button type="button" data-act="quality" role="menuitem">🎚️ Calidad</button>
   <button type="button" data-act="config" role="menuitem">🛠️ Configuración</button>
   <button type="button" data-act="ruffle" role="menuitem">🚫 Bloquear menú Ruffle</button>
+  <button type="button" data-act="resetPos" role="menuitem">↺ Restablecer lugar de botones</button>
   <button type="button" data-act="exitfs" role="menuitem">⤢ Salir de pantalla completa</button>
 </div>
 
@@ -861,14 +882,6 @@ body.custom-btn-colors .pbtn:active{
       <div id="gpInfo" style="font-size:11px;color:var(--muted);margin-top:4px">Mando: (ninguno)</div>
     </div>
     <div class="field">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-        <label style="margin:0">Asignaciones (botón del mando → tecla del teclado)</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" id="gpRefreshBtn" style="padding:4px 10px;font-size:12px">🔄 Refrescar</button><button type="button" id="gpAddBtn" class="ok" style="padding:4px 10px;font-size:12px">➕ Añadir botón</button><button type="button" id="gpCancelCapBtn" class="warn" style="padding:4px 10px;font-size:12px;display:none">✕ Cancelar captura</button></div>
-      </div>
-      <div id="gpMapList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:6px"></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px">Pulsa "Capturar" en una fila y luego presiona el botón del mando que quieras asignar a esa tecla.</div>
-    </div>
-    <div class="field">
       <label>🎚️ Sensibilidad sticks: <span id="gpSensVal">1.0</span></label>
       <input type="range" id="gpSens" min="0.3" max="2" step="0.1" value="1" style="width:100%" />
     </div>
@@ -881,7 +894,21 @@ body.custom-btn-colors .pbtn:active{
       <input type="range" id="gpDiag" min="10" max="60" step="1" value="35" style="width:100%" />
     </div>
     <div class="field" style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px">
-      <label style="font-weight:600">🎯 Detección de "Añadir botón"</label>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <label style="margin:0">⌨️ Teclado virtual — toca una tecla y pulsa el botón del mando</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button type="button" id="gpRefreshBtn" style="padding:4px 10px;font-size:12px">🔄 Refrescar</button>
+          <button type="button" id="gpCancelCapBtn" class="warn" style="padding:4px 10px;font-size:12px;display:none">✕ Cancelar</button>
+        </div>
+      </div>
+      <div id="gpKeyboard" class="gp-kb"></div>
+      <div id="gpAssignedList" style="margin-top:8px;font-size:11px;color:var(--muted)"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">Toca una tecla → pulsa cualquier botón del mando para asignarlo. Toca de nuevo una tecla con asignación para verla y borrarla.</div>
+      <div id="gpAddBtn" style="display:none"></div>
+      <div id="gpMapList" style="display:none"></div>
+    </div>
+    <div class="field" style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px">
+      <label style="font-weight:600">🎯 Detección desde el mando</label>
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Ajusta para evitar falsos positivos (gatillos en reposo, drift, D-pads tipo hat).</div>
       <label>Δ mínimo de eje desde reposo: <span id="gpAxDeltaVal">0.60</span></label>
       <input type="range" id="gpAxDelta" min="0.15" max="0.95" step="0.05" value="0.6" style="width:100%" />
@@ -3644,6 +3671,32 @@ document.getElementById('importFile').onchange=e=>{
   r.readAsText(f);
 };
 
+/* Restablecer SOLO la ubicación en pantalla de los botones táctiles
+   a los valores de fábrica. NO toca tamaños, mapeos, colores ni calibración.
+   En pantalla completa NO muestra confirmación (silencioso). */
+function resetTouchButtonPositions(){
+  try{
+    cfg.positions={};
+    cfg.positionsFS={};
+    cfg.positionsWin={};
+    cfg.positionsWinP={};
+    cfg.positionsWinL={};
+    cfg.positionsFsP={};
+    cfg.positionsFsL={};
+    save();
+  }catch{}
+  // Re-render sin recargar para no salir de fullscreen
+  try{ renderPad(); }catch{ try{ location.reload(); }catch{} }
+  try{ applyConfig(); }catch{}
+}
+document.getElementById('resetPosBtn').onclick=()=>{
+  const inFs=!!document.fullscreenElement;
+  if(!inFs){
+    if(!confirm('¿Restablecer la ubicación en pantalla de los botones táctiles a los valores de fábrica?')) return;
+  }
+  resetTouchButtonPositions();
+};
+
 /* ---------- Tamaños individuales ---------- */
 function applyIndividualSize(id){
   const el=document.querySelector(`[data-id="${id}"]`);
@@ -4231,6 +4284,11 @@ requestAnimationFrame(()=>requestAnimationFrame(restoreHeaderScroll));
       case 'quality': click('qualityBtn'); break;
       case 'config':  click('configBtn'); break;
       case 'ruffle':  toggle('blockRuffleMenu'); break;
+      case 'resetPos': {
+        // En fullscreen NO se pregunta nada: restablece y listo.
+        try{ resetTouchButtonPositions(); }catch{}
+        break;
+      }
       case 'exitfs':  {
         try{ document.exitFullscreen?.(); }catch{}
         try{ screen.orientation?.unlock?.(); }catch{}
@@ -5144,23 +5202,94 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
   const LS='flashtouch_gamepad_v1';
   // Nombres estándar (Standard Gamepad mapping)
   const BTN_NAMES=['A (0)','B (1)','X (2)','Y (3)','LB (4)','RB (5)','LT (6)','RT (7)','Select (8)','Start (9)','L3 (10)','R3 (11)','D-Up (12)','D-Down (13)','D-Left (14)','D-Right (15)','Home (16)'];
-  const DEFAULT_MAP={
-    0:'Space',     // A
-    1:'Escape',    // B
-    2:'Shift',     // X
-    3:'Control',   // Y
-    4:'Q', 5:'E',
-    6:'Z', 7:'X',
-    8:'Tab', 9:'Enter',
-    12:'ArrowUp',13:'ArrowDown',14:'ArrowLeft',15:'ArrowRight'
+  // ===== Esquema de "botones virtuales" para ejes =====
+  // Cada eje se expone como DOS entradas mapeables independientes (negativa y positiva),
+  // así D-pads tipo "hat axis" y sticks pueden tener teclas individuales por dirección.
+  const AXIS_BASE=1000;
+  const HAT_BASE=2000;
+  const HAT_DIRS=['up','right','down','left'];
+  const HAT_DIR_LABELS={up:'D-Pad ↑',right:'D-Pad →',down:'D-Pad ↓',left:'D-Pad ←'};
+  function axisVirt(a,sign){ return AXIS_BASE + a*2 + (sign>0?1:0); }
+  function decodeVirt(i){
+    if(i<AXIS_BASE || i>=HAT_BASE) return null;
+    const r=i-AXIS_BASE;
+    return { axis:Math.floor(r/2), sign:(r%2===1)?1:-1 };
+  }
+  function hatVirt(a,dir){ const di=HAT_DIRS.indexOf(dir); return HAT_BASE + a*4 + (di<0?0:di); }
+  function decodeHatVirt(i){
+    if(i<HAT_BASE) return null;
+    const r=i-HAT_BASE;
+    return { axis:Math.floor(r/4), dir:HAT_DIRS[r%4] };
+  }
+  function hatStateFromAxis(a,v){
+    // Algunos mandos genéricos PC/PS3/Android exponen la cruceta como un solo
+    // eje POV/hat (frecuente: Eje9). 1.29≈reposo; el resto son 8 posiciones.
+    if(a<8 && Math.abs(v)<=1.05) return null;
+    if(!Number.isFinite(v)) return null;
+    const out={up:false,right:false,down:false,left:false,neutral:false};
+    if(v>1.12 || Math.abs(v-1.285714)<0.18 || Math.abs(v-3.285714)<0.18){ out.neutral=true; return out; }
+    const points=[
+      [-1.000000,['up']],[-0.714286,['up','right']],[-0.428571,['right']],[-0.142857,['down','right']],
+      [ 0.142857,['down']],[ 0.428571,['down','left']],[ 0.714286,['left']],[ 1.000000,['up','left']]
+    ];
+    let best=null, dist=Infinity;
+    for(const p of points){ const d=Math.abs(v-p[0]); if(d<dist){ best=p; dist=d; } }
+    if(!best || dist>0.20) return null;
+    best[1].forEach(d=>{ out[d]=true; });
+    return out;
+  }
+  // Nombres descriptivos para ejes virtuales según índice estándar Gamepad API
+  const AXIS_NAMES={
+    // Eje 0: stick izquierdo X, Eje 1: stick izquierdo Y
+    // Eje 2: stick derecho X (o gatillos en algunos mandos), Eje 3: stick derecho Y
+    // Eje 4/5/6/7: D-Pad en mandos que reportan hat como ejes (ej. 8BitDo, Nintendo, algunos genéricos)
+    // El mapping varía por mando; los más comunes son 0-3 para sticks y 4-5 o 6-7 para D-pad
   };
-  let state={enabled:false, map:{...DEFAULT_MAP}, sens:1.0, dz:15, diag:35, axDelta:0.6, confirmMs:120, names:{}, baselines:{}};
+  const AXIS_DIR_NAMES=[
+    // axis 0: stick izq horizontal
+    ['Stick Izq ←','Stick Izq →'],
+    // axis 1: stick izq vertical
+    ['Stick Izq ↑','Stick Izq ↓'],
+    // axis 2: stick der horizontal (o gatillo izq en algunos)
+    ['Stick Der ←','Stick Der →'],
+    // axis 3: stick der vertical
+    ['Stick Der ↑','Stick Der ↓'],
+    // axis 4: D-Pad horizontal (hat) — común en Nintendo, 8BitDo, genéricos
+    ['D-Pad ← (Eje4)','D-Pad → (Eje4)'],
+    // axis 5: D-Pad vertical (hat) — común en Nintendo, 8BitDo, genéricos
+    ['D-Pad ↑ (Eje5)','D-Pad ↓ (Eje5)'],
+    // axis 6: D-Pad horizontal alternativo
+    ['D-Pad ← (Eje6)','D-Pad → (Eje6)'],
+    // axis 7: D-Pad vertical alternativo
+    ['D-Pad ↑ (Eje7)','D-Pad ↓ (Eje7)'],
+    // axis 8+
+    ['Eje8 (−)','Eje8 (+)'],
+    ['Eje9 (−)','Eje9 (+)'],
+  ];
+  function rawNameOf(i){
+    if(i<AXIS_BASE) return BTN_NAMES[i] || ('Botón '+i);
+    const h=decodeHatVirt(i);
+    if(h) return (HAT_DIR_LABELS[h.dir]||('D-Pad '+h.dir))+' (Eje'+h.axis+' hat)';
+    const d=decodeVirt(i);
+    if(!d) return 'Entrada '+i;
+    const row=AXIS_DIR_NAMES[d.axis];
+    if(row) return row[d.sign>0?1:0];
+    return 'Eje '+d.axis+' '+(d.sign>0?'(+)':'(−)');
+  }
+  // AXIS_BASE=1000, axisVirt(axis, sign): 1000 + axis*2 + (sign>0?1:0)
+  // Eje 4 neg (1008)=D-Pad← , Eje 4 pos (1009)=D-Pad→
+  // Eje 5 neg (1010)=D-Pad↑ , Eje 5 pos (1011)=D-Pad↓
+  // (también ejes 6/7 para mandos alternativos)
+  // Sin asignaciones por defecto: el usuario asigna cada tecla manualmente
+  // pulsando el botón/dirección del mando que quiera mapear.
+  const DEFAULT_MAP={};
+  let state={enabled:false, map:{}, sens:1.0, dz:15, diag:35, axDelta:0.6, confirmMs:120, names:{}, baselines:{}};
   try{
     const r=localStorage.getItem(LS);
     if(r){
       const o=JSON.parse(r);
       state.enabled=!!o.enabled;
-      state.map={...DEFAULT_MAP,...(o.map||{})};
+      state.map={...(o.map||{})};
       if(typeof o.sens==='number') state.sens=o.sens;
       if(typeof o.dz==='number') state.dz=o.dz;
       if(typeof o.diag==='number') state.diag=o.diag;
@@ -5216,59 +5345,94 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
   enableModal && enableModal.addEventListener('change',()=>setEnabled(enableModal.checked));
 
   let captureFor=null; // índice de botón que está esperando captura desde el mando
+  let pendingKey=null; // tecla seleccionada en el teclado virtual a la que se asignará el próximo botón pulsado
+  const kbEl=document.getElementById('gpKeyboard');
+  const assignedListEl=document.getElementById('gpAssignedList');
+
+  // Layout del teclado virtual estilo QWERTY + flechas
+  const KB_LAYOUT=[
+    [{k:'Escape',l:'Esc'},{k:'F1'},{k:'F2'},{k:'F3'},{k:'F4'},{k:'F5'},{k:'F6'},{k:'F7'},{k:'F8'},{k:'F9'},{k:'F10'},{k:'F11'},{k:'F12'},{k:'PrintScreen',l:'PrtSc'},{k:'ScrollLock',l:'ScrLk'},{k:'Pause',l:'Pause'}],
+    [{k:'`',l:'` ~'},{k:'1'},{k:'2'},{k:'3'},{k:'4'},{k:'5'},{k:'6'},{k:'7'},{k:'8'},{k:'9'},{k:'0'},{k:'-'},{k:'=',l:'='},{k:'Backspace',l:'⌫ Backspace',c:'wide'},{k:'Insert',l:'Ins'},{k:'Home'},{k:'PageUp',l:'PgUp'}],
+    [{k:'Tab',l:'Tab',c:'wide'},{k:'Q'},{k:'W'},{k:'E'},{k:'R'},{k:'T'},{k:'Y'},{k:'U'},{k:'I'},{k:'O'},{k:'P'},{k:'[',l:'['},{k:']',l:']'},{k:'\\',l:'\\'},{k:'Delete',l:'Del'},{k:'End'},{k:'PageDown',l:'PgDn'}],
+    [{k:'CapsLock',l:'Caps',c:'wide'},{k:'A'},{k:'S'},{k:'D'},{k:'F'},{k:'G'},{k:'H'},{k:'J'},{k:'K'},{k:'L'},{k:';',l:';'},{k:'\'',l:"'"},{k:'Enter',l:'⏎ Enter',c:'wide'}],
+    [{k:'Shift',l:'Shift L',c:'wide'},{k:'Z'},{k:'X'},{k:'C'},{k:'V'},{k:'B'},{k:'N'},{k:'M'},{k:',',l:','},{k:'.',l:'.'},{k:'/',l:'/'},{k:'ShiftRight',l:'Shift R',c:'wide'},{k:'ArrowUp',l:'↑'}],
+    [{k:'Control',l:'Ctrl',c:'wide'},{k:'Meta',l:'Win'},{k:'Alt',l:'Alt'},{k:'Space',l:'Espacio',c:'widest'},{k:'AltRight',l:'AltGr'},{k:'MetaRight',l:'Win R'},{k:'ContextMenu',l:'Menu'},{k:'ControlRight',l:'Ctrl R',c:'wide'},{k:'ArrowLeft',l:'←'},{k:'ArrowDown',l:'↓'},{k:'ArrowRight',l:'→'}],
+    [{k:'NumLock',l:'NumLk'},{k:'NumpadDivide',l:'/'},{k:'NumpadMultiply',l:'*'},{k:'NumpadSubtract',l:'-'},{k:'Numpad7',l:'7'},{k:'Numpad8',l:'8'},{k:'Numpad9',l:'9'},{k:'NumpadAdd',l:'+'},{k:'Numpad4',l:'4'},{k:'Numpad5',l:'5'},{k:'Numpad6',l:'6'},{k:'Numpad1',l:'1'},{k:'Numpad2',l:'2'},{k:'Numpad3',l:'3'},{k:'NumpadEnter',l:'⏎'},{k:'Numpad0',l:'0'},{k:'NumpadDecimal',l:'.'}],
+  ];
+
+  // Devuelve los índices de gamepad asignados a una tecla
+  function btnsForKey(key){
+    const out=[];
+    for(const k of Object.keys(state.map)){
+      if(state.map[k]===key) out.push(+k);
+    }
+    return out;
+  }
+
+  function renderKeyboard(){
+    if(!kbEl) return;
+    kbEl.innerHTML='';
+    KB_LAYOUT.forEach(row=>{
+      const r=document.createElement('div');
+      r.className='kbd-row';
+      row.forEach(def=>{
+        const b=document.createElement('div');
+        b.className='kbd-key'+(def.c?(' '+def.c):'');
+        b.dataset.key=def.k;
+        b.textContent=def.l||def.k;
+        const assigned=btnsForKey(def.k);
+        if(assigned.length){
+          b.classList.add('assigned');
+          const badge=document.createElement('span');
+          badge.className='badge';
+          badge.textContent=assigned.length;
+          b.appendChild(badge);
+          b.title='Asignado a: '+assigned.map(rawNameOf).join(', ');
+        }else{
+          b.title='Sin asignar — toca y pulsa un botón del mando';
+        }
+        if(pendingKey===def.k) b.classList.add('capturing');
+        b.addEventListener('click',()=>onKeyTap(def.k));
+        r.appendChild(b);
+      });
+      kbEl.appendChild(r);
+    });
+    renderAssignedSummary();
+  }
+
+  function renderAssignedSummary(){
+    if(!assignedListEl) return;
+    const entries=Object.keys(state.map).map(k=>+k).filter(k=>state.map[k]).sort((a,b)=>a-b);
+    if(!entries.length){ assignedListEl.innerHTML='<em>Sin asignaciones todavía.</em>'; return; }
+    assignedListEl.innerHTML='<strong style="color:var(--muted)">Asignaciones actuales: </strong>'+
+      entries.map(i=>`<span class="gp-assigned-chip">${rawNameOf(i)} → ${state.map[i]} <button data-clr="${i}" title="Borrar">✕</button></span>`).join('');
+    assignedListEl.querySelectorAll('button[data-clr]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const i=+btn.dataset.clr;
+        delete state.map[i]; save(); renderKeyboard();
+      });
+    });
+  }
+
+  function onKeyTap(key){
+    // Modo añadir/asignar: pulsar la tecla virtual y luego un botón del mando.
+    // Permite asignar VARIOS botones (p.ej. cada dirección del D-Pad) a la misma tecla,
+    // o asignar a teclas que ya tenían un botón sin perder el anterior.
+    // El borrado de asignaciones se hace con la ✕ de cada chip de "Asignaciones actuales".
+    const existing=btnsForKey(key);
+    pendingKey=key;
+    captureFor=null;
+    addDetect=true;
+    addCandidate=null;
+    snapshotPadBaseline();
+    const extra=existing.length ? (' (ya asignada a: '+existing.map(rawNameOf).join(', ')+' — se añadirá otro)') : '';
+    startCaptureTimer('🎮 Pulsa en el mando el botón a asignar a "'+key+'"'+extra+'…');
+    renderKeyboard();
+  }
 
   function renderList(){
-    if(!listEl) return;
-    listEl.innerHTML='';
-    const indices=Array.from(new Set([...Object.keys(state.map).map(Number), ...BTN_NAMES.map((_,i)=>i)])).sort((a,b)=>a-b);
-    indices.forEach(i=>{
-      const row=document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap';
-      const defName=BTN_NAMES[i]||('Botón '+i);
-      const customName=state.names[i]||'';
-      const cur=state.map[i]||'';
-      row.innerHTML=`
-        <input type="text" data-name="${i}" class="gpName" value="${customName.replace(/"/g,'&quot;')}" placeholder="${defName}" title="Nombre personalizado" style="min-width:90px;max-width:120px;font-size:12px" />
-        <span style="font-size:11px;color:var(--muted)">→</span>
-        <input type="text" data-idx="${i}" class="gpKey" value="${cur}" placeholder="(sin asignar)" style="flex:1;min-width:90px" />
-        <button type="button" data-cap="${i}" class="gpCap">Capturar</button>
-        <button type="button" data-clr="${i}" class="gpClr warn">✕</button>
-      `;
-      listEl.appendChild(row);
-    });
-    listEl.querySelectorAll('.gpName').forEach(inp=>{
-      inp.addEventListener('change',()=>{
-        const i=+inp.dataset.name; const v=inp.value.trim();
-        if(v) state.names[i]=v; else delete state.names[i];
-        save();
-      });
-    });
-    listEl.querySelectorAll('.gpKey').forEach(inp=>{
-      inp.addEventListener('change',()=>{
-        const i=+inp.dataset.idx; const v=inp.value.trim();
-        if(v) state.map[i]=v; else delete state.map[i];
-      });
-      inp.addEventListener('keydown',e=>{
-        e.preventDefault();
-        const i=+inp.dataset.idx;
-        let k=e.key;
-        if(k===' '||e.code==='Space') k='Space';
-        else if(k.length===1) k=k.toUpperCase();
-        state.map[i]=k; inp.value=k;
-      });
-    });
-    listEl.querySelectorAll('.gpCap').forEach(b=>{
-      b.addEventListener('click',()=>{
-        captureFor=+b.dataset.cap;
-        statusEl.textContent='Pulsa el botón del mando para asignar a "'+(BTN_NAMES[captureFor]||captureFor)+'"…';
-        statusEl.className='status warn';
-      });
-    });
-    listEl.querySelectorAll('.gpClr').forEach(b=>{
-      b.addEventListener('click',()=>{
-        const i=+b.dataset.clr; delete state.map[i]; renderList();
-      });
-    });
+    // Compatibilidad: ahora se renderiza el teclado virtual.
+    renderKeyboard();
   }
 
   openBtn && openBtn.addEventListener('click',()=>{
@@ -5279,7 +5443,7 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
   document.getElementById('gpClose').addEventListener('click',()=>{ modal.classList.remove('on'); captureFor=null; });
   document.getElementById('gpSave').addEventListener('click',()=>{ save(); modal.classList.remove('on'); captureFor=null; });
   document.getElementById('gpResetMap').addEventListener('click',()=>{
-    state.map={...DEFAULT_MAP};
+    state.map={};
     state.sens=1.0; state.dz=15; state.diag=35;
     syncSensUI(); renderList(); save();
   });
@@ -5315,7 +5479,7 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
         const data=JSON.parse(r.result);
         const src=(data && data.map) ? data : (data && data._gamepad ? data._gamepad : null);
         if(!src || typeof src!=='object' || !src.map) throw new Error('formato');
-        state.map={...DEFAULT_MAP, ...(src.map||{})};
+        state.map={...(src.map||{})};
         if(typeof src.sens==='number') state.sens=src.sens;
         if(typeof src.dz==='number')   state.dz=src.dz;
         if(typeof src.diag==='number') state.diag=src.diag;
@@ -5368,7 +5532,7 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
   // Estado para detección de "Añadir botón" desde el mando
   let addDetect=false;        // esperando pulsación para añadir nuevo mapeo
   let captureTimeoutId=null;  // timeout activo para captura/detección
-  const CAPTURE_TIMEOUT_MS=8000;
+  const CAPTURE_TIMEOUT_MS=15000;
 
   function clearCaptureTimer(){ if(captureTimeoutId){ clearTimeout(captureTimeoutId); captureTimeoutId=null; } }
   function updateCancelBtn(){
@@ -5378,15 +5542,15 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
   function startCaptureTimer(msg){
     clearCaptureTimer();
     captureTimeoutId=setTimeout(()=>{
-      captureFor=null; addDetect=false; addBaseline=null; updateCancelBtn();
+      captureFor=null; addDetect=false; addBaseline=null; pendingKey=null; updateCancelBtn(); try{renderKeyboard();}catch{}
       if(statusEl){ statusEl.textContent='⌛ Tiempo agotado. Detección cancelada.'; statusEl.className='status warn'; }
     }, CAPTURE_TIMEOUT_MS);
     if(statusEl && msg){ statusEl.textContent=msg+' (se cancela en '+(CAPTURE_TIMEOUT_MS/1000)+'s)'; statusEl.className='status warn'; }
     updateCancelBtn();
   }
   function cancelCapture(){
-    if(captureFor===null && !addDetect) return;
-    captureFor=null; addDetect=false; addBaseline=null; if(typeof addCandidate!=='undefined') addCandidate=null; clearCaptureTimer(); updateCancelBtn();
+    if(captureFor===null && !addDetect && !pendingKey) return;
+    captureFor=null; addDetect=false; addBaseline=null; pendingKey=null; if(typeof addCandidate!=='undefined') addCandidate=null; clearCaptureTimer(); updateCancelBtn(); try{renderKeyboard();}catch{}
     if(statusEl){ statusEl.textContent='✋ Detección cancelada.'; statusEl.className='status idle'; }
   }
 
@@ -5456,32 +5620,9 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
     else el.textContent='⚠️ Sin calibrar para: '+gp.id+' (se usará snapshot al añadir).';
   }
   function snapshotPadBaseline(){
-    // Si hay calibración persistida para este mando, úsala; si no, snapshot al vuelo
-    addBaseline={ btns:{}, axes:{} };
-    const pads=navigator.getGamepads ? navigator.getGamepads() : [];
-    for(const p of pads){
-      if(!p) continue;
-      const stored=state.baselines[_padKey(p)];
-      if(stored){
-        addBaseline.btns[p.index]=stored.btns.slice();
-        addBaseline.axes[p.index]=stored.axes.slice();
-      }else{
-        const bb=[]; const aa=[];
-        const btns=p.buttons||[];
-        for(let i=0;i<btns.length;i++) bb[i]=isBtnPressed(btns[i]);
-        const axs=p.axes||[];
-        for(let a=0;a<axs.length;a++) aa[a]=(typeof axs[a]==='number')?axs[a]:0;
-        addBaseline.btns[p.index]=bb;
-        addBaseline.axes[p.index]=aa;
-      }
-    }
+    // La nueva detección por edge se auto-inicializa; reseteamos contenedor.
+    addBaseline=null;
     for(const k in prev.buttons) delete prev.buttons[k];
-    const padsNow=navigator.getGamepads ? navigator.getGamepads() : [];
-    for(const p of padsNow){
-      if(!p) continue;
-      for(let i=0;i<p.buttons.length;i++) prev.buttons[i]=isBtnPressed(p.buttons[i]);
-      break;
-    }
   }
   // Botones calibración
   const gpCalibBtn=document.getElementById('gpCalibBtn');
@@ -5539,71 +5680,152 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
       setInfo(gp);
       // Modo "Añadir botón": esperar pulsación en CUALQUIER mando/botón/eje y añadirlo
       if(addDetect){
-        const AX_DELTA=Math.max(0.05, Number(state.axDelta)||0.6);
-        const CONFIRM_MS=Math.max(0, Number(state.confirmMs)||0);
-        // Encontrar candidato actual (primer botón/eje activo respecto a baseline)
-        let activeKind=null, activePad=null, activeIdx=-1;
+        const AX_DELTA=Math.max(0.25, Number(state.axDelta)||0.6);
+        // Inicializar/actualizar tracking de estado previo por pad
+        if(!addBaseline) addBaseline={btns:{}, axes:{}, initBtns:{}, initAxes:{}, prevBtns:{}, ready:{}};
+        if(!addBaseline.prevBtns) addBaseline.prevBtns={};
+        if(!addBaseline.initBtns) addBaseline.initBtns={};
+        if(!addBaseline.initAxes) addBaseline.initAxes={};
+        if(!addBaseline.ready) addBaseline.ready={};
+        // Buscar PRIMERA transición (no-pulsado -> pulsado) en cualquier botón de cualquier pad,
+        // o eje que cruce por primera vez el umbral desde su valor inicial.
+        let activeKind=null, activePad=null, activeIdx=-1, activeSign=1, activeDir=null;
         for(const padAny of pads){
           if(!padAny) continue;
-          const baseB=(addBaseline && addBaseline.btns[padAny.index])||[];
-          const baseA=(addBaseline && addBaseline.axes[padAny.index])||[];
+          const pi=padAny.index;
+          // Snapshot inicial la primera vez que vemos este pad
+          if(!addBaseline.initBtns[pi]){
+            const ib=[]; const btns=padAny.buttons||[];
+            for(let i=0;i<btns.length;i++) ib[i]=isBtnPressed(btns[i]);
+            addBaseline.initBtns[pi]=ib;
+            addBaseline.prevBtns[pi]=ib.slice();
+          }
+          if(!addBaseline.initAxes[pi]){
+            const ia=[]; const axs=padAny.axes||[];
+            for(let a=0;a<axs.length;a++) ia[a]=(typeof axs[a]==='number')?axs[a]:0;
+            addBaseline.initAxes[pi]=ia;
+          }
+          // Esperar a que TODOS los botones que estaban pulsados al iniciar se suelten
+          // (evita capturar un botón que el usuario ya tenía pulsado)
+          if(!addBaseline.ready[pi]){
+            const initB=addBaseline.initBtns[pi]||[];
+            const btns=padAny.buttons||[];
+            let anyHeld=false;
+            for(let i=0;i<btns.length;i++){
+              if(initB[i] && isBtnPressed(btns[i])){ anyHeld=true; break; }
+            }
+            if(!anyHeld) addBaseline.ready[pi]=true;
+            // Mientras no esté listo, actualizamos prev y seguimos
+            const np=[]; for(let i=0;i<btns.length;i++) np[i]=isBtnPressed(btns[i]);
+            addBaseline.prevBtns[pi]=np;
+            continue;
+          }
+          // Buscar edge en botones
+          const prevB=addBaseline.prevBtns[pi]||[];
           const btns=padAny.buttons||[];
           for(let i=0;i<btns.length;i++){
-            if(isBtnPressed(btns[i]) && !baseB[i]){ activeKind='btn'; activePad=padAny; activeIdx=i; break; }
+            const cur=isBtnPressed(btns[i]);
+            if(cur && !prevB[i]){ activeKind='btn'; activePad=padAny; activeIdx=i; break; }
           }
+          // Actualizar prev SIEMPRE
+          const np=[]; for(let i=0;i<btns.length;i++) np[i]=isBtnPressed(btns[i]);
+          addBaseline.prevBtns[pi]=np;
           if(activeKind) break;
+          // Buscar edge en ejes — usa valor ABSOLUTO del eje (los gamepads idle ~0)
+          // y exige que el eje haya pasado por la zona neutra antes de aceptar un nuevo
+          // disparo. Así, si el usuario aún tenía pulsado D-Up al tocar la tecla virtual,
+          // soltarlo NO dispara la dirección contraria ni pisa la asignación previa.
           const axs=padAny.axes||[];
+          if(!addBaseline.axReady) addBaseline.axReady={};
+          if(!addBaseline.axReady[pi]) addBaseline.axReady[pi]={};
+          const NEUTRAL_BAND=Math.max(0.15, AX_DELTA*0.4);
           for(let a=0;a<axs.length;a++){
             const cur=(typeof axs[a]==='number')?axs[a]:0;
-            const base=(typeof baseA[a]==='number')?baseA[a]:0;
-            if(Math.abs(cur-base)>AX_DELTA){ activeKind='axis'; activePad=padAny; activeIdx=a; break; }
+            const hat=hatStateFromAxis(a,cur);
+            if(hat){
+              if(hat.neutral) addBaseline.axReady[pi][a]=true;
+              if(!addBaseline.axReady[pi][a]) continue;
+              const dir=HAT_DIRS.find(d=>hat[d]);
+              if(dir){
+                addBaseline.axReady[pi][a]=false;
+                activeKind='hat'; activePad=padAny; activeIdx=a; activeDir=dir; break;
+              }
+              continue;
+            }
+            if(Math.abs(cur)<NEUTRAL_BAND){ addBaseline.axReady[pi][a]=true; }
+            if(!addBaseline.axReady[pi][a]) continue;
+            if(Math.abs(cur)>AX_DELTA){
+              addBaseline.axReady[pi][a]=false;
+              activeKind='axis'; activePad=padAny; activeIdx=a; activeSign=cur>=0?1:-1; break;
+            }
           }
           if(activeKind) break;
         }
         // Tracking de candidato + tiempo de confirmación
         if(!activeKind){
-          if(addCandidate){ addCandidate=null; if(statusEl){ statusEl.textContent='🎮 Pulsa el botón del mando que quieres añadir…'; statusEl.className='status warn'; } }
+          // nada
         }else{
-          const sameAsPrev = addCandidate
-            && addCandidate.kind===activeKind
-            && addCandidate.padIndex===activePad.index
-            && addCandidate.idx===activeIdx;
-          if(!sameAsPrev){
-            addCandidate={ kind:activeKind, padIndex:activePad.index, idx:activeIdx, startedAt:performance.now(), padId:activePad.id };
-          }
-          const elapsed=performance.now()-addCandidate.startedAt;
-          if(elapsed < CONFIRM_MS){
-            if(statusEl){
-              const lbl=activeKind==='btn' ? (BTN_NAMES[activeIdx]||('Botón '+activeIdx)) : ('Eje '+activeIdx);
-              statusEl.textContent='⏳ Mantén '+lbl+' '+Math.ceil((CONFIRM_MS-elapsed))+'ms…';
-              statusEl.className='status warn';
-            }
-          }else{
+          {
             // CONFIRMADO -> añadir
             let detected=false;
             if(activeKind==='btn'){
               const i=activeIdx;
-              if(state.map[i]===undefined){
+              if(pendingKey){
+                const prevAssign=state.map[i];
+                if(prevAssign && prevAssign!==pendingKey){
+                  // No sobreescribir una asignación previa distinta: avisar y cancelar.
+                  if(statusEl){ statusEl.textContent='⚠️ '+(BTN_NAMES[i]||('Botón '+i))+' ya está asignado a "'+prevAssign+'". Bórralo primero con la ✕ si quieres reasignarlo a "'+pendingKey+'".'; statusEl.className='status warn'; }
+                }else{
+                  state.map[i]=pendingKey;
+                  if(statusEl){ statusEl.textContent='✅ '+(BTN_NAMES[i]||('Botón '+i))+' → '+pendingKey; statusEl.className='status ok'; }
+                }
+              }else if(state.map[i]===undefined){
                 state.map[i]='';
-                if(statusEl){ statusEl.textContent='✅ Añadido '+(BTN_NAMES[i]||('Botón '+i))+' (mando: '+activePad.id+'). Define una tecla.'; statusEl.className='status ok'; }
+                if(statusEl){ statusEl.textContent='✅ Añadido '+(BTN_NAMES[i]||('Botón '+i))+' (mando: '+activePad.id+').'; statusEl.className='status ok'; }
               }else{
-                if(statusEl){ statusEl.textContent='ℹ️ '+(BTN_NAMES[i]||('Botón '+i))+' ya está en la lista.'; statusEl.className='status warn'; }
+                if(statusEl){ statusEl.textContent='ℹ️ '+(BTN_NAMES[i]||('Botón '+i))+' → '+(state.map[i]||'(sin tecla)'); statusEl.className='status warn'; }
+              }
+              detected=true;
+            }else if(activeKind==='hat'){
+              const a=activeIdx;
+              const virtIdx=hatVirt(a,activeDir);
+              if(pendingKey){
+                const prevAssignH=state.map[virtIdx];
+                if(prevAssignH && prevAssignH!==pendingKey){
+                  if(statusEl){ statusEl.textContent='⚠️ '+rawNameOf(virtIdx)+' ya está asignado a "'+prevAssignH+'". Bórralo primero con la ✕ si quieres reasignarlo a "'+pendingKey+'".'; statusEl.className='status warn'; }
+                }else{
+                  state.map[virtIdx]=pendingKey;
+                  if(statusEl){ statusEl.textContent='✅ '+rawNameOf(virtIdx)+' → '+pendingKey; statusEl.className='status ok'; }
+                }
+              }else if(state.map[virtIdx]===undefined){
+                state.map[virtIdx]='';
+                if(statusEl){ statusEl.textContent='✅ Añadido '+rawNameOf(virtIdx)+'.'; statusEl.className='status ok'; }
+              }else{
+                if(statusEl){ statusEl.textContent='ℹ️ '+rawNameOf(virtIdx)+' → '+(state.map[virtIdx]||'(sin tecla)'); statusEl.className='status warn'; }
               }
               detected=true;
             }else{
               const a=activeIdx;
-              const virtIdx=(activePad.buttons.length)+a;
-              if(state.map[virtIdx]===undefined){
+              const virtIdx=axisVirt(a,activeSign);
+              if(pendingKey){
+                const prevAssignA=state.map[virtIdx];
+                if(prevAssignA && prevAssignA!==pendingKey){
+                  if(statusEl){ statusEl.textContent='⚠️ '+rawNameOf(virtIdx)+' ya está asignado a "'+prevAssignA+'". Bórralo primero con la ✕ si quieres reasignarlo a "'+pendingKey+'".'; statusEl.className='status warn'; }
+                }else{
+                  state.map[virtIdx]=pendingKey;
+                  if(statusEl){ statusEl.textContent='✅ '+rawNameOf(virtIdx)+' → '+pendingKey; statusEl.className='status ok'; }
+                }
+              }else if(state.map[virtIdx]===undefined){
                 state.map[virtIdx]='';
-                if(statusEl){ statusEl.textContent='✅ Añadido Eje '+a+' como botón virtual '+virtIdx+'. Define una tecla.'; statusEl.className='status ok'; }
+                if(statusEl){ statusEl.textContent='✅ Añadido '+rawNameOf(virtIdx)+'.'; statusEl.className='status ok'; }
               }else{
-                if(statusEl){ statusEl.textContent='ℹ️ Eje '+a+' ya está en la lista.'; statusEl.className='status warn'; }
+                if(statusEl){ statusEl.textContent='ℹ️ '+rawNameOf(virtIdx)+' → '+(state.map[virtIdx]||'(sin tecla)'); statusEl.className='status warn'; }
               }
               detected=true;
             }
             if(detected){
-              addDetect=false; addBaseline=null; addCandidate=null; clearCaptureTimer(); updateCancelBtn();
-              save(); renderList();
+              addDetect=false; addBaseline=null; addCandidate=null; pendingKey=null; clearCaptureTimer(); updateCancelBtn();
+              save(); try{renderKeyboard();}catch{}
               for(let i=0;i<gp.buttons.length;i++) prev.buttons[i]=isBtnPressed(gp.buttons[i]);
               requestAnimationFrame(poll);
               return;
@@ -5611,31 +5833,89 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
           }
         }
       }
-      // Captura de asignación
+      // Captura de asignación (botones físicos Y ejes/D-pad hat)
       else if(captureFor!==null){
+        let captureHandled=false;
+        // 1) Buscar en botones físicos
         for(let i=0;i<gp.buttons.length;i++){
           if(isBtnPressed(gp.buttons[i]) && !prev.buttons[i]){
-            state.map[captureFor]=state.map[captureFor]; // mantener tecla
-            const row=listEl.querySelector(`.gpKey[data-idx="${captureFor}"]`);
+            const row=listEl ? listEl.querySelector(`.gpKey[data-idx="${captureFor}"]`) : null;
             const key=row ? row.value.trim() : '';
             if(key){
               if(captureFor!==i) delete state.map[captureFor];
               state.map[i]=key;
-              statusEl.textContent='Asignado: '+(BTN_NAMES[i]||('Botón '+i))+' → '+key;
-              statusEl.className='status ok';
+              if(statusEl){ statusEl.textContent='Asignado: '+(BTN_NAMES[i]||('Botón '+i))+' → '+key; statusEl.className='status ok'; }
             }else{
-              statusEl.textContent='Define primero una tecla en esa fila.';
-              statusEl.className='status warn';
+              if(statusEl){ statusEl.textContent='Define primero una tecla en esa fila.'; statusEl.className='status warn'; }
             }
-            captureFor=null;
+            captureFor=null; captureHandled=true;
             clearCaptureTimer(); updateCancelBtn();
             renderList();
             break;
           }
         }
+        // 2) Si no se resolvió con botón, buscar en ejes (D-pad tipo hat axis u otros)
+        if(!captureHandled){
+          const axC=gp.axes||[];
+          const dzCap=Math.max(0.25,(state.dz||0)/100);
+          if(!prev.axDirCap) prev.axDirCap={};
+          for(let a=0;a<axC.length;a++){
+            const v=(typeof axC[a]==='number')?axC[a]:0;
+            const hat=hatStateFromAxis(a,v);
+            if(hat){
+              if(!prev.hatDirCap) prev.hatDirCap={};
+              for(const dir of HAT_DIRS){
+                const vi=hatVirt(a,dir);
+                const active=!!hat[dir];
+                const was=!!prev.hatDirCap[vi];
+                if(active && !was){
+                  const row=listEl ? listEl.querySelector(`.gpKey[data-idx="${captureFor}"]`) : null;
+                  const key=row ? row.value.trim() : '';
+                  if(key){
+                    if(captureFor!==vi) delete state.map[captureFor];
+                    state.map[vi]=key;
+                    if(statusEl){ statusEl.textContent='Asignado: '+rawNameOf(vi)+' → '+key; statusEl.className='status ok'; }
+                  }else{
+                    if(statusEl){ statusEl.textContent='Define primero una tecla en esa fila.'; statusEl.className='status warn'; }
+                  }
+                  captureFor=null; captureHandled=true;
+                  clearCaptureTimer(); updateCancelBtn();
+                  renderList();
+                  break;
+                }
+                prev.hatDirCap[vi]=active;
+              }
+              if(captureHandled) break;
+              continue;
+            }
+            for(const sign of [-1,1]){
+              const active = sign>0 ? (v>dzCap) : (v<-dzCap);
+              const vi=axisVirt(a,sign);
+              const was=!!prev.axDirCap[vi];
+              if(active && !was){
+                const row=listEl ? listEl.querySelector(`.gpKey[data-idx="${captureFor}"]`) : null;
+                const key=row ? row.value.trim() : '';
+                if(key){
+                  if(captureFor!==vi) delete state.map[captureFor];
+                  state.map[vi]=key;
+                  if(statusEl){ statusEl.textContent='Asignado: '+rawNameOf(vi)+' → '+key; statusEl.className='status ok'; }
+                }else{
+                  if(statusEl){ statusEl.textContent='Define primero una tecla en esa fila.'; statusEl.className='status warn'; }
+                }
+                captureFor=null; captureHandled=true;
+                clearCaptureTimer(); updateCancelBtn();
+                renderList();
+                break;
+              }
+              prev.axDirCap[vi]=active;
+            }
+            if(captureHandled) break;
+          }
+        }
       }
       // Envío de teclas si está activado
       if(state.enabled && captureFor===null && !addDetect){
+        // Botones físicos
         for(let i=0;i<gp.buttons.length;i++){
           const pressed=isBtnPressed(gp.buttons[i]);
           const was=!!prev.buttons[i];
@@ -5645,60 +5925,191 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
             else if(!pressed && was) releaseKeyCompat(key);
           }
         }
-        // Sticks analógicos -> flechas (usando sensibilidad, zona muerta y umbral diagonal)
         const ax=gp.axes||[];
-        const sens=state.sens||1, dz=(state.dz||0)/100, diag=(state.diag||35)/100;
-        let lx=(ax[0]||0)*sens, ly=(ax[1]||0)*sens;
-        if(Math.abs(lx)<dz) lx=0;
-        if(Math.abs(ly)<dz) ly=0;
-        const ax_=Math.abs(lx), ay_=Math.abs(ly);
-        // Si una componente es mucho mayor que la otra (ratio < diag), suprimimos la menor para evitar diagonales no deseadas
-        let useX=ax_>0, useY=ay_>0;
-        if(useX && useY){
-          if(ay_/ax_ < diag) useY=false;
-          else if(ax_/ay_ < diag) useX=false;
-        }
-        const dirs={
-          left:  useX && lx<-dz,
-          right: useX && lx> dz,
-          up:    useY && ly<-dz,
-          down:  useY && ly> dz
-        };
-        for(const d of ['up','down','left','right']){
-          const k={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[d];
-          if(dirs[d] && !prev.axes[d]) pressKeyCompat(k);
-          else if(!dirs[d] && prev.axes[d]) releaseKeyCompat(k);
-          prev.axes[d]=dirs[d];
+        const sens=state.sens||1, dz=Math.max(0.05,(state.dz||0)/100);
+        // Ejes mapeados como botones virtuales (D-pad-as-axis, sticks por dirección, etc.)
+        const mappedAxes=new Set();
+        if(!prev.axDir) prev.axDir={};
+        if(!prev.hatDir) prev.hatDir={};
+        Object.keys(state.map).forEach(kStr=>{
+          const i=+kStr; if(i<AXIS_BASE) return;
+          const h=decodeHatVirt(i);
+          if(h){
+            const hat=hatStateFromAxis(h.axis, (typeof ax[h.axis]==='number')?ax[h.axis]:0);
+            const active=!!(hat && hat[h.dir]);
+            const was=!!prev.hatDir[i];
+            const key=state.map[i];
+            if(key){
+              if(active && !was) pressKeyCompat(key);
+              else if(!active && was) releaseKeyCompat(key);
+            }
+            prev.hatDir[i]=active;
+            mappedAxes.add(h.axis);
+            return;
+          }
+          const d=decodeVirt(i); if(!d) return;
+          const v=((typeof ax[d.axis]==='number')?ax[d.axis]:0)*sens;
+          const active = d.sign>0 ? (v>dz) : (v<-dz);
+          const was=!!prev.axDir[i];
+          const key=state.map[i];
+          if(key){
+            if(active && !was) pressKeyCompat(key);
+            else if(!active && was) releaseKeyCompat(key);
+          }
+          prev.axDir[i]=active;
+          mappedAxes.add(d.axis);
+        });
+        // Sticks analógicos -> flechas (sólo si los ejes 0/1 NO están mapeados manualmente)
+        if(!mappedAxes.has(0) && !mappedAxes.has(1)){
+          const diag=(state.diag||35)/100;
+          let lx=(ax[0]||0)*sens, ly=(ax[1]||0)*sens;
+          if(Math.abs(lx)<dz) lx=0;
+          if(Math.abs(ly)<dz) ly=0;
+          const ax_=Math.abs(lx), ay_=Math.abs(ly);
+          let useX=ax_>0, useY=ay_>0;
+          if(useX && useY){
+            if(ay_/ax_ < diag) useY=false;
+            else if(ax_/ay_ < diag) useX=false;
+          }
+          const dirs={
+            left:  useX && lx<-dz,
+            right: useX && lx> dz,
+            up:    useY && ly<-dz,
+            down:  useY && ly> dz
+          };
+          for(const d of ['up','down','left','right']){
+            const k={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[d];
+            if(dirs[d] && !prev.axes[d]) pressKeyCompat(k);
+            else if(!dirs[d] && prev.axes[d]) releaseKeyCompat(k);
+            prev.axes[d]=dirs[d];
+          }
         }
       }
-      // Indicador en vivo: detectar botón recién pulsado y mostrarlo
+      // Indicador en vivo: detectar botón o eje recién activado y mostrarlo (con índice crudo)
       if(captureFor===null){
+        const highlight=(i)=>{
+          if(!listEl) return;
+          const row=listEl.querySelector(`.gpKey[data-idx="${i}"]`);
+          if(row && row.parentElement){
+            const el=row.parentElement;
+            el.style.transition='background-color .15s';
+            el.style.backgroundColor='hsl(var(--primary)/0.25)';
+            row.style.transition='box-shadow .15s, background-color .15s';
+            row.style.boxShadow='0 0 0 2px hsl(var(--primary))';
+            row.style.backgroundColor='hsl(var(--primary)/0.15)';
+            setTimeout(()=>{ el.style.backgroundColor=''; row.style.boxShadow=''; row.style.backgroundColor=''; },400);
+          }
+        };
+        // Botones físicos
         for(let i=0;i<gp.buttons.length;i++){
           if(isBtnPressed(gp.buttons[i]) && !prev.buttons[i]){
-            const nm=BTN_NAMES[i]||('Botón '+i);
+            const nm=state.names[i]||rawNameOf(i);
             const mapped=state.map[i];
+            // Etiqueta especial si es la cruceta del Standard Gamepad (12-15)
+            const dpadTag = (i>=12 && i<=15) ? '  ·  🎯 CRUCETA' : '';
             if(statusEl){
-              statusEl.textContent='🎮 Pulsado: '+nm+' (índice '+i+')'+(mapped?(' → '+mapped):' (sin asignar)');
+              statusEl.textContent='🎮 Pulsado: '+nm+'  ·  índice '+i+dpadTag+'  ·  id="'+gp.id+'"'+(mapped?(' → '+mapped):' (sin asignar)');
               statusEl.className='status ok';
             }
-            // Resaltar fila + input de tecla objetivo
-            if(listEl){
-              const row=listEl.querySelector(`.gpKey[data-idx="${i}"]`);
-              if(row && row.parentElement){
-                const el=row.parentElement;
-                el.style.transition='background-color .15s';
-                el.style.backgroundColor='hsl(var(--primary)/0.25)';
-                row.style.transition='box-shadow .15s, background-color .15s';
-                row.style.boxShadow='0 0 0 2px hsl(var(--primary))';
-                row.style.backgroundColor='hsl(var(--primary)/0.15)';
-                setTimeout(()=>{
-                  el.style.backgroundColor='';
-                  row.style.boxShadow='';
-                  row.style.backgroundColor='';
-                }, 400);
-              }
-            }
+            highlight(i);
           }
+        }
+        // Ejes (cada dirección como evento independiente)
+        if(!prev.axDirRaw) prev.axDirRaw={};
+        if(!prev.axBaseSeen) prev.axBaseSeen={};
+        if(!prev.axIdleVal) prev.axIdleVal={};
+        if(!prev.axPendSince) prev.axPendSince={};
+        if(!prev.hatDirRaw) prev.hatDirRaw={};
+        if(!prev.hatPendSince) prev.hatPendSince={};
+        const axA=gp.axes||[];
+        // Umbral más alto para el indicador visual: evita falsos positivos por
+        // drift del stick o por gatillos/ejes que reposan fuera de 0.
+        const dzInd=Math.max(0.6,(state.dz||0)/100);
+        const NOW=performance.now();
+        const HOLD_MS=80; // tiempo mínimo que el eje debe mantenerse activo para mostrar
+        for(let a=0;a<axA.length;a++){
+          const v=(typeof axA[a]==='number')?axA[a]:0;
+          const hat=hatStateFromAxis(a,v);
+          if(hat){
+            for(const dir of HAT_DIRS){
+              const vi=hatVirt(a,dir);
+              const active=!!hat[dir];
+              const was=!!prev.hatDirRaw[vi];
+              if(prev.hatDirRaw[vi]===undefined){
+                prev.hatDirRaw[vi]=active;
+                prev.hatPendSince[vi]=0;
+                continue;
+              }
+              if(active && !was){
+                if(!prev.hatPendSince[vi]) prev.hatPendSince[vi]=NOW;
+                if(NOW - prev.hatPendSince[vi] < HOLD_MS) continue;
+                const nm=state.names[vi]||rawNameOf(vi);
+                const mapped=state.map[vi];
+                if(statusEl){
+                  statusEl.textContent='🎮 Eje activo: '+nm+'  ·  eje crudo='+a+'  ·  valor='+v.toFixed(2)+'  ·  índice virtual '+vi+'  ·  🎯 CRUCETA ('+(HAT_DIR_LABELS[dir]||dir)+')  ·  id="'+gp.id+'"'+(mapped?(' → '+mapped):' (sin asignar)');
+                  statusEl.className='status ok';
+                }
+                highlight(vi);
+                prev.hatPendSince[vi]=0;
+              }else if(!active){
+                prev.hatPendSince[vi]=0;
+              }
+              prev.hatDirRaw[vi]=active;
+            }
+            continue;
+          }
+          // Snapshot del valor de reposo la primera vez que vemos el eje (en el primer
+          // poll asumimos que el usuario NO está tocando el mando). Si el valor base ya
+          // está fuera de la zona muerta (gatillos en -1, hat en ±1, drift), lo
+          // ignoramos como "actividad" salvo que se aleje claramente del baseline.
+          if(!prev.axBaseSeen[a]){
+            prev.axBaseSeen[a]=true;
+            prev.axIdleVal[a]=v;
+          }
+          const idle=prev.axIdleVal[a]||0;
+          const delta=v-idle;
+          [-1,1].forEach(sign=>{
+            const vi=axisVirt(a,sign);
+            // Activo solo si el valor cruza el umbral Y se ha movido lo suficiente
+            // respecto a su valor en reposo (filtra ejes que ya nacen en ±1).
+            const crossed = sign>0 ? (v>dzInd) : (v<-dzInd);
+            const moved   = sign>0 ? (delta>dzInd) : (delta<-dzInd);
+            const active  = crossed && moved;
+            const was=!!prev.axDirRaw[vi];
+            // Inicializa el estado previo en el primer ciclo SIN disparar el indicador,
+            // así un eje que ya estaba activo al cargar la página no genera el mensaje.
+            if(prev.axDirRaw[vi]===undefined){
+              prev.axDirRaw[vi]=active;
+              prev.axPendSince[vi]=0;
+              return;
+            }
+            if(active && !was){
+              // Empieza a contar tiempo para confirmar que es una activación real.
+              if(!prev.axPendSince[vi]) prev.axPendSince[vi]=NOW;
+              if(NOW - prev.axPendSince[vi] < HOLD_MS){
+                // Aún no confirmado: no actualizar prev ni mostrar nada todavía.
+                return;
+              }
+              const nm=state.names[vi]||rawNameOf(vi);
+              const mapped=state.map[vi];
+              // Etiqueta de cruceta cuando el eje suele corresponder a un hat D-pad
+              // (típicamente ejes 4/5 o 6/7 según el mando — PS4 usa 6/7, otros 4/5).
+              const isHat = (a===4 || a===5 || a===6 || a===7);
+              const dpadDir = isHat
+                ? (a%2===0 ? (sign<0?'D-Pad ←':'D-Pad →') : (sign<0?'D-Pad ↑':'D-Pad ↓'))
+                : '';
+              const hatTag = isHat ? ('  ·  🎯 CRUCETA ('+dpadDir+')') : '';
+              if(statusEl){
+                statusEl.textContent='🎮 Eje activo: '+nm+'  ·  eje crudo='+a+'  ·  signo='+(sign>0?'+':'−')+'  ·  índice virtual '+vi+'  ·  valor='+v.toFixed(2)+hatTag+'  ·  id="'+gp.id+'"'+(mapped?(' → '+mapped):' (sin asignar)');
+                statusEl.className='status ok';
+              }
+              highlight(vi);
+              prev.axPendSince[vi]=0;
+            }else if(!active){
+              prev.axPendSince[vi]=0;
+            }
+            prev.axDirRaw[vi]=active;
+          });
         }
       }
       for(let i=0;i<gp.buttons.length;i++) prev.buttons[i]=isBtnPressed(gp.buttons[i]);
