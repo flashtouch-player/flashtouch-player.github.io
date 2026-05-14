@@ -639,6 +639,7 @@ body.custom-btn-colors .pbtn:active{
   color: var(--cust-btn-text, #fff) !important;
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
    
@@ -668,6 +669,7 @@ body.custom-btn-colors .pbtn:active{
       </div>
     </div>
     <button id="loadUrlBtn">Cargar URL</button>
+    <button id="extrasBtn" type="button" title="Opciones extra">✨ Extras</button>
     <button id="pauseBtn" class="warn">⏸ Pausa</button>
     <button id="stopBtn" class="danger">⏹ Detener</button>
     <button id="reloadBtn">🔄 Reiniciar</button>
@@ -6119,5 +6121,196 @@ document.querySelectorAll('.resize-handle').forEach(h=>{
   requestAnimationFrame(poll);
 })();
 </script>
+
+<!-- Modal: Extras -->
+<div id="extrasModal" style="display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.6);align-items:center;justify-content:center">
+  <div style="background:#1a1d24;color:#fff;border:1px solid #444;border-radius:12px;padding:20px;max-width:90vw;width:420px;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0">✨ Extras</h3>
+      <button id="extrasCloseBtn" type="button" style="padding:4px 10px">✖</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <input id="ssf2ZipInput" type="file" accept=".zip,application/zip,application/x-zip-compressed" style="display:none" />
+      <button id="ssf2LoadBtn" type="button" class="ok" title="Cargar un .zip que contenga ssf2.swf y la carpeta data/" style="white-space:nowrap;padding:10px">📦 Cargar SSF2 (.zip)</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const modal=document.getElementById('extrasModal');
+  const openBtn=document.getElementById('extrasBtn');
+  const closeBtn=document.getElementById('extrasCloseBtn');
+  if(!modal || !openBtn) return;
+  openBtn.addEventListener('click',()=>{modal.style.display='flex'});
+  if(closeBtn) closeBtn.addEventListener('click',()=>{modal.style.display='none'});
+  modal.addEventListener('click',e=>{if(e.target===modal) modal.style.display='none'});
+})();
+</script>
+<script>
+/* === SSF2 ZIP Loader =====================================================
+ * Permite cargar un .zip que contenga ssf2.swf + carpeta data/.
+ * Extrae todo, crea blob URLs, y patchea fetch/XHR para que las peticiones
+ * relativas que hace el .swf (p.ej. data/characters/Mario.swf) se resuelvan
+ * contra el zip cargado en memoria.
+ * ======================================================================= */
+(function(){
+  const btn   = document.getElementById('ssf2LoadBtn');
+  const input = document.getElementById('ssf2ZipInput');
+  if(!btn || !input) return;
+
+  // Mapa: ruta-normalizada-dentro-del-zip -> { url, type }
+  window.__ssf2Files = window.__ssf2Files || new Map();
+  const FILES = window.__ssf2Files;
+
+  function mimeFor(name){
+    const n = name.toLowerCase();
+    if(n.endsWith('.swf')) return 'application/x-shockwave-flash';
+    if(n.endsWith('.png')) return 'image/png';
+    if(n.endsWith('.jpg')||n.endsWith('.jpeg')) return 'image/jpeg';
+    if(n.endsWith('.gif')) return 'image/gif';
+    if(n.endsWith('.mp3')) return 'audio/mpeg';
+    if(n.endsWith('.ogg')) return 'audio/ogg';
+    if(n.endsWith('.wav')) return 'audio/wav';
+    if(n.endsWith('.json')) return 'application/json';
+    if(n.endsWith('.txt'))  return 'text/plain';
+    if(n.endsWith('.xml'))  return 'application/xml';
+    return 'application/octet-stream';
+  }
+
+  function norm(p){
+    return String(p||'').replace(/\\/g,'/').replace(/^\.?\//,'').toLowerCase();
+  }
+
+  // Dada una URL absoluta de fetch, intenta encontrar un archivo del zip
+  // cuyo path coincida con el final del pathname.
+  function lookup(urlStr){
+    let path;
+    try{ path = new URL(urlStr, location.href).pathname; }
+    catch{ path = String(urlStr||''); }
+    path = norm(decodeURIComponent(path));
+    if(FILES.has(path)) return FILES.get(path);
+    // Intentar coincidencia por sufijo (el blob:// del swf tiene un path inventado)
+    for(const key of FILES.keys()){
+      if(path.endsWith('/'+key) || path.endsWith(key)) return FILES.get(key);
+    }
+    // Probar sólo el basename como último recurso
+    const base = path.split('/').pop();
+    for(const key of FILES.keys()){
+      if(key.split('/').pop() === base) return FILES.get(key);
+    }
+    return null;
+  }
+
+  // ---- Patch fetch ----
+  const _fetch = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    try{
+      const url = (typeof input === 'string') ? input : (input && input.url) || '';
+      const hit = lookup(url);
+      if(hit){
+        return _fetch(hit.url, init).catch(()=> _fetch(hit.url));
+      }
+    }catch{}
+    return _fetch(input, init);
+  };
+
+  // ---- Patch XHR ----
+  const _open = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url){
+    try{
+      const hit = lookup(url);
+      if(hit){
+        arguments[1] = hit.url;
+        return _open.apply(this, arguments);
+      }
+    }catch{}
+    return _open.apply(this, arguments);
+  };
+
+  function clearFiles(){
+    for(const {url} of FILES.values()){ try{ URL.revokeObjectURL(url); }catch{} }
+    FILES.clear();
+  }
+
+  async function handleZip(file){
+    if(!window.JSZip){ alert('JSZip no se pudo cargar (revisa tu conexión).'); return; }
+    btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳ Extrayendo...';
+    try{
+      clearFiles();
+      const zip = await JSZip.loadAsync(file);
+      let mainSwfPath = null;
+      const entries = [];
+      zip.forEach((path, entry)=>{ if(!entry.dir) entries.push([path, entry]); });
+
+      // Buscar ssf2.swf (case-insensitive). Si no, primer .swf en la raíz/menos profundo.
+      const lower = entries.map(([p])=>p.toLowerCase());
+      let idx = lower.findIndex(p => p.endsWith('/ssf2.swf') || p === 'ssf2.swf');
+      if(idx === -1) idx = lower.findIndex(p => /(^|\/)ssf2[^\/]*\.swf$/.test(p));
+      if(idx === -1){
+        // primer .swf con menor profundidad
+        let best=-1, bestDepth=1e9;
+        for(let i=0;i<lower.length;i++){
+          if(lower[i].endsWith('.swf')){
+            const d = lower[i].split('/').length;
+            if(d<bestDepth){ bestDepth=d; best=i; }
+          }
+        }
+        idx = best;
+      }
+      if(idx === -1){ alert('El .zip no contiene ningún .swf'); return; }
+      mainSwfPath = entries[idx][0];
+
+      // Si el zip tiene un prefijo común (carpeta raíz), lo recortamos para que
+      // las rutas internas comiencen donde el swf espera (p. ej. 'data/...').
+      const swfDir = mainSwfPath.includes('/') ? mainSwfPath.slice(0, mainSwfPath.lastIndexOf('/')+1) : '';
+
+      btn.textContent = '⏳ Cargando archivos (0/'+entries.length+')';
+      let done = 0;
+      for(const [path, entry] of entries){
+        const blob = await entry.async('blob');
+        const typed = new Blob([blob], { type: mimeFor(path) });
+        const url = URL.createObjectURL(typed);
+        // Registrar varias claves para maximizar la coincidencia
+        const rel = swfDir && path.startsWith(swfDir) ? path.slice(swfDir.length) : path;
+        FILES.set(norm(path), { url, type: typed.type });
+        FILES.set(norm(rel),  { url, type: typed.type });
+        done++;
+        if(done % 25 === 0) btn.textContent = '⏳ Cargando archivos ('+done+'/'+entries.length+')';
+      }
+
+      // Montar el SWF principal usando la función existente del player
+      const main = FILES.get(norm(mainSwfPath));
+      if(!main){ alert('No se pudo preparar ssf2.swf'); return; }
+
+      // Limpiar blob anterior del player
+      try{ if(window.currentBlobUrl) URL.revokeObjectURL(window.currentBlobUrl); }catch{}
+      window.currentBlobUrl = main.url;
+      if(Array.isArray(window.cachedBlobUrls)) window.cachedBlobUrls.push(main.url);
+
+      if(typeof window.mountPlayer === 'function'){
+        window.mountPlayer(main.url);
+      } else {
+        alert('El reproductor aún no está listo, intenta de nuevo.');
+      }
+      btn.textContent = '✅ SSF2 cargado';
+      setTimeout(()=>{ btn.textContent = oldTxt; }, 2500);
+    }catch(err){
+      console.error('[SSF2]', err);
+      alert('Error cargando el .zip: '+(err && err.message || err));
+      btn.textContent = oldTxt;
+    }finally{
+      btn.disabled = false;
+      input.value = '';
+    }
+  }
+
+  btn.addEventListener('click', ()=> input.click());
+  input.addEventListener('change', e=>{
+    const f = e.target.files && e.target.files[0];
+    if(f) handleZip(f);
+  });
+})();
+</script>
+
 </body>
 </html>
