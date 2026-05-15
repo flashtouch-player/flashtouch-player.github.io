@@ -1,8 +1,6 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2816201965904823"
-     crossorigin="anonymous"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=5,user-scalable=yes" />
 <link rel="icon" href="icon.png" type="image/png">
@@ -151,6 +149,32 @@ button.warn:hover{background:#b45309;border-color:#b45309}
 button.ok{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:600}
 button.ok:hover{background:#047857;border-color:#047857}
 input[type=file]{color:var(--muted);font-size:12px}
+/* ===== Botón personalizado de subir archivo + selector de modo ===== */
+.fileWrap{display:inline-flex;align-items:stretch;gap:0;border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.25);border:1px solid var(--border);background:var(--panel2)}
+.fileWrap select.modeSel{
+  appearance:none;-webkit-appearance:none;border:none;outline:none;
+  background:var(--panel2);color:var(--txt);
+  font-size:12px;font-weight:600;padding:0 28px 0 12px;cursor:pointer;
+  border-right:1px solid var(--border);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='currentColor' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:10px 6px;
+  transition:background-color .2s ease,color .2s ease;
+}
+.fileWrap select.modeSel:hover{background-color:var(--panel)}
+.fileWrap select.modeSel option{background:var(--panel);color:var(--txt)}
+.fileWrap input[type=file]#fileInput{display:none}
+.fileWrap label.fileBtn{
+  display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  padding:8px 16px;font-size:13px;font-weight:600;color:#fff;
+  background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 50%,#ec4899 100%);
+  background-size:200% 200%;background-position:0% 50%;
+  transition:background-position .4s ease, transform .15s ease, box-shadow .2s ease;
+  user-select:none;white-space:nowrap;
+}
+.fileWrap label.fileBtn:hover{background-position:100% 50%;box-shadow:inset 0 0 0 999px rgba(255,255,255,.05)}
+.fileWrap label.fileBtn:active{transform:scale(.97)}
+.fileWrap label.fileBtn .ico{font-size:15px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+.fileWrap label.fileBtn .fname{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;opacity:.95;font-size:12px}
 label.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;font-weight:500}
 
 main{padding:18px;padding-bottom:calc(260px + env(safe-area-inset-bottom))}
@@ -653,7 +677,17 @@ body.custom-btn-colors .pbtn:active{
     <button id="helpBtn" class="iconBtn" title="Ayuda rápida" aria-label="Ayuda rápida">❓</button>
   </h1>
   <div class="row">
-    <input type="file" id="fileInput" accept=".swf" />
+    <div class="fileWrap" title="Selecciona el modo y sube tu archivo .swf">
+      <select id="playerMode" class="modeSel" title="Modo de reproducción: Ruffle (emulador) o Flash nativo (plugin del navegador)">
+        <option value="ruffle">⚡ Modo Ruffle</option>
+        <option value="flash">🎬 Modo Flash (sin Ruffle)</option>
+      </select>
+      <input type="file" id="fileInput" accept=".swf" />
+      <label for="fileInput" class="fileBtn" id="fileBtnLabel">
+        <span class="ico">📂</span>
+        <span class="fname" id="fileBtnText">Subir archivo .swf</span>
+      </label>
+    </div>
     <input type="url" id="urlInput" placeholder="URL Directo .swf (opcional)" title="Ejemplo https://www.paginaweb.com/games/Super_Mario_Flash_v.2.swf" style="flex:1;min-width:160px" />
     <div style="position:relative;flex:1;min-width:200px;display:flex;gap:4px">
       <input type="url" id="pageUrlInput" placeholder="URL de Página Web (opcional)" title="Ejemplo https://archive.org/details/redball4 (De la Categoría/Topics Flash Games)" style="flex:1;min-width:0" />
@@ -1173,6 +1207,12 @@ function workerProxyUrl(rawUrl, type) {
 }
 </script>
 
+<script>
+  // Desactiva el auto-polyfill de Ruffle para que NO sustituya los <embed type="application/x-shockwave-flash">
+  // (los necesitamos intactos en "Modo Flash sin Ruffle"). Seguimos usando ruffle.createPlayer() manual en Modo Ruffle.
+  window.RufflePlayer = window.RufflePlayer || {};
+  window.RufflePlayer.config = Object.assign({}, window.RufflePlayer.config||{}, { polyfills:false, autoplay:'on' });
+</script>
 <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 
     
@@ -1656,11 +1696,38 @@ function fmtBytes(n){
   return n.toFixed(n<10&&i>0?1:0)+' '+u[i];
 }
 
+function getPlayerMode(){
+  const s=document.getElementById('playerMode');
+  return (s && s.value)||'ruffle';
+}
+function remountCurrentPlayer(){
+  if(!currentBlobUrl) return;
+  mountPlayer(currentBlobUrl);
+}
+
 function mountPlayer(src){
-  if(!ruffle){alert('Ruffle aún no carga, intenta de nuevo');return}
   const stage=document.getElementById('player');
-  stage.innerHTML='';
+  const mode=getPlayerMode();
   document.getElementById('emptyMsg').style.display='none';
+  if(mode==='flash'){
+    // Modo Flash nativo (sin Ruffle): usa el plugin del navegador si existe.
+    stage.innerHTML='';
+    const embed=document.createElement('embed');
+    embed.setAttribute('type','application/x-shockwave-flash');
+    embed.setAttribute('src',src);
+    embed.setAttribute('allowscriptaccess','always');
+    embed.setAttribute('allowfullscreen','true');
+    embed.setAttribute('quality','high');
+    embed.style.width='100%';embed.style.height='100%';
+    stage.appendChild(embed);
+    player=embed;
+    const sb=document.getElementById('stopBtn');
+    if(sb){ sb.textContent='⏹ Detener'; sb.dataset.state=''; }
+    setTimeout(hideLoading,250);
+    return;
+  }
+  if(!ruffle){alert('Ruffle aún no carga, intenta de nuevo');return}
+  stage.innerHTML='';
   player=ruffle.createPlayer();
   player.style.width='100%';player.style.height='100%';
   stage.appendChild(player);
@@ -1689,8 +1756,17 @@ async function mountPlayerFromUrl(swfUrl){
   }
 }
 
+const playerModeSelect=document.getElementById('playerMode');
+if(playerModeSelect){
+  playerModeSelect.onchange=()=>{
+    remountCurrentPlayer();
+  };
+}
+
 document.getElementById('fileInput').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
+  // Actualiza el texto del botón con el nombre del archivo
+  try{ const t=document.getElementById('fileBtnText'); if(t) t.textContent=f.name; }catch{}
   if(currentBlobUrl){ try{URL.revokeObjectURL(currentBlobUrl)}catch{} }
   // Releer el archivo como Blob "propio" (independiente del File handle del input)
   const buf=await f.arrayBuffer();
