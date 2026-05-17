@@ -1213,7 +1213,78 @@ function workerProxyUrl(rawUrl, type) {
   window.RufflePlayer = window.RufflePlayer || {};
   window.RufflePlayer.config = Object.assign({}, window.RufflePlayer.config||{}, { polyfills:false, autoplay:'on' });
 </script>
-<script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+<script>
+/* === Detección de navegador antiguo / plugin Flash nativo ===
+   - Chrome <88, Basilisk, Pale Moon, Waterfox Classic, IE, navegadores
+     sin WebAssembly o sin BigInt → se considera "legacy".
+   - Si hay plugin Flash detectado, también se fuerza modo Flash nativo.
+   En esos casos NO se carga Ruffle (que requiere WASM moderno + ES2020)
+   y se selecciona automáticamente el "Modo Flash (sin Ruffle)". */
+(function(){
+  function hasFlashPlugin(){
+    try{
+      if(navigator.plugins){
+        for(var i=0;i<navigator.plugins.length;i++){
+          var n=(navigator.plugins[i].name||'').toLowerCase();
+          if(n.indexOf('shockwave flash')>-1 || n.indexOf('flash')>-1) return true;
+        }
+      }
+      if(navigator.mimeTypes && navigator.mimeTypes['application/x-shockwave-flash']) return true;
+      if(typeof ActiveXObject!=='undefined'){
+        try{ new ActiveXObject('ShockwaveFlash.ShockwaveFlash'); return true; }catch(e){}
+      }
+    }catch(e){}
+    return false;
+  }
+  function isLegacy(){
+    var ua=navigator.userAgent||'';
+    if(typeof WebAssembly==='undefined') return true;
+    if(typeof BigInt==='undefined') return true;
+    if(/Basilisk|PaleMoon|Pale Moon|Goanna|Waterfox\/(?:5[0-6]|4|3)|MSIE |Trident\//i.test(ua)) return true;
+    var m=ua.match(/Chrom(?:e|ium)\/(\d+)/i);
+    if(m && parseInt(m[1],10)<88) return true;
+    var f=ua.match(/Firefox\/(\d+)/i);
+    if(f && parseInt(f[1],10)<78 && !/Basilisk|PaleMoon/i.test(ua)) return true;
+    return false;
+  }
+  var legacy = isLegacy();
+  var flash  = hasFlashPlugin();
+  window.__LEGACY_BROWSER__ = legacy;
+  window.__HAS_FLASH_PLUGIN__ = flash;
+  // Si hay plugin Flash o el navegador es antiguo, forzar modo "flash" y NO cargar Ruffle.
+  if(legacy || flash){
+    document.addEventListener('DOMContentLoaded',function(){
+      var sel=document.getElementById('playerMode');
+      if(sel){ sel.value='flash'; }
+    });
+  } else {
+    // Navegador moderno: cargar Ruffle normalmente.
+    var s=document.createElement('script');
+    s.src='https://unpkg.com/@ruffle-rs/ruffle';
+    s.async=false;
+    document.head.appendChild(s);
+  }
+  // Mensaje de estado de Flash nativo: SIEMPRE debajo del texto base "Carga un archivo .swf...".
+  document.addEventListener('DOMContentLoaded',function(){
+    var em=document.getElementById('emptyMsg');
+    if(!em) return;
+    var baseText = 'Carga un archivo .swf o pega una URL para comenzar';
+    var statusHtml;
+    if(flash){
+      statusHtml = '<br><div style="margin-top:6px;font-size:0.7em;color:#7CFC7C;line-height:1.3;">'
+                 + '✅ Plugin Flash detectado.<br>Modo <b>Flash nativo</b> activado automáticamente.'
+                 + '</div>';
+    } else if(legacy){
+      statusHtml = '<br><div style="margin-top:6px;font-size:0.7em;color:#FFD479;line-height:1.3;">'
+                 + '⚠️ Navegador antiguo detectado.<br>Usando <b>Modo Flash nativo</b> (sin Ruffle).'
+                 + '</div>';
+    } else {
+      statusHtml = '';
+    }
+    em.innerHTML = baseText + statusHtml;
+  });
+})();
+</script>
 
     
 <script>
@@ -1581,7 +1652,9 @@ document.getElementById('toggleHeaderBtn').onclick=()=>{
 /* ---------- Ruffle ---------- */
 let ruffle, player, currentBlobUrl=null;
 window.addEventListener('load',()=>{
-  if(window.RufflePlayer){ruffle=window.RufflePlayer.newest()}
+  if(window.RufflePlayer && typeof window.RufflePlayer.newest==='function'){
+    try{ ruffle=window.RufflePlayer.newest(); }catch(_){ ruffle=null; }
+  }
   applyTheme();
   applyConfig();
   // Limpiar cualquier caché de juego previo (si quedó tras un cierre/refresco)
@@ -1710,23 +1783,59 @@ function mountPlayer(src){
   const mode=getPlayerMode();
   document.getElementById('emptyMsg').style.display='none';
   if(mode==='flash'){
-    // Modo Flash nativo (sin Ruffle): usa el plugin del navegador si existe.
+    // Modo Flash nativo (sin Ruffle).
+    // En navegadores con plugin NPAPI (Basilisk/Pale Moon/Waterfox Classic)
+    // creamos un <embed> directamente — NO usamos <object classid="clsid:..">
+    // porque Goanna lo intenta instanciar como ActiveX y deja la zona en blanco.
+    // En IE/Edge legacy sí necesitamos <object>; se detecta por ActiveXObject.
     stage.innerHTML='';
-    const embed=document.createElement('embed');
-    embed.setAttribute('type','application/x-shockwave-flash');
-    embed.setAttribute('src',src);
-    embed.setAttribute('allowscriptaccess','always');
-    embed.setAttribute('allowfullscreen','true');
-    embed.setAttribute('quality','high');
-    embed.style.width='100%';embed.style.height='100%';
-    stage.appendChild(embed);
-    player=embed;
+    // Preferir SIEMPRE la URL original sobre el blob: para Flash nativo,
+    // ya que el plugin NPAPI/PPAPI no carga URLs blob: de forma fiable.
+    const realSrc = (window.__lastSwfUrl && /^https?:/i.test(window.__lastSwfUrl))
+        ? window.__lastSwfUrl : src;
+    const isIE = (typeof ActiveXObject!=='undefined') || !!window.MSInputMethodContext;
+    if(isIE){
+      stage.innerHTML =
+        '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" '+
+                'codebase="https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab" '+
+                'width="100%" height="100%">'+
+          '<param name="movie" value="'+realSrc+'">'+
+          '<param name="quality" value="high">'+
+          '<param name="allowScriptAccess" value="always">'+
+          '<param name="allowFullScreen" value="true">'+
+          '<param name="wmode" value="direct">'+
+          '<param name="bgcolor" value="#000000">'+
+        '</object>';
+      player = stage.querySelector('object');
+    } else {
+      const emb=document.createElement('embed');
+      emb.setAttribute('type','application/x-shockwave-flash');
+      emb.setAttribute('src',realSrc);
+      emb.setAttribute('quality','high');
+      emb.setAttribute('wmode','direct');
+      emb.setAttribute('bgcolor','#000000');
+      emb.setAttribute('allowscriptaccess','always');
+      emb.setAttribute('allowfullscreen','true');
+      emb.setAttribute('pluginspage','https://www.adobe.com/go/getflashplayer');
+      emb.style.width='100%';
+      emb.style.height='100%';
+      emb.style.display='block';
+      stage.appendChild(emb);
+      player = emb;
+    }
     const sb=document.getElementById('stopBtn');
     if(sb){ sb.textContent='⏹ Detener'; sb.dataset.state=''; }
     setTimeout(hideLoading,250);
     return;
   }
-  if(!ruffle){alert('Ruffle aún no carga, intenta de nuevo');return}
+  if(!ruffle){
+    if(window.__LEGACY_BROWSER__ || window.__HAS_FLASH_PLUGIN__){
+      var _sel=document.getElementById('playerMode');
+      if(_sel){ _sel.value='flash'; }
+      return mountPlayer(src);
+    }
+    alert('Ruffle aún no carga, intenta de nuevo');return;
+  }
   stage.innerHTML='';
   player=ruffle.createPlayer();
   player.style.width='100%';player.style.height='100%';
@@ -1746,6 +1855,15 @@ function mountPlayer(src){
 // Carga un .swf por URL (remota) usando el flujo de descarga con progreso + caché.
 async function mountPlayerFromUrl(swfUrl){
   try{
+    // En Modo Flash nativo: dejar que el plugin descargue la URL directamente.
+    // El plugin NPAPI/PPAPI no carga blob: de forma fiable (Basilisk en
+    // particular ignora silenciosamente blobs), así que evitamos el cache.
+    window.__lastSwfUrl = swfUrl;
+    if(getPlayerMode()==='flash'){
+      try{ hideLoading(); }catch(_){}
+      mountPlayer(swfUrl);
+      return;
+    }
     const blobUrl=await downloadSwfToCache(swfUrl);
     if(currentBlobUrl) try{URL.revokeObjectURL(currentBlobUrl)}catch{}
     currentBlobUrl=blobUrl;
@@ -1759,6 +1877,25 @@ async function mountPlayerFromUrl(swfUrl){
 const playerModeSelect=document.getElementById('playerMode');
 if(playerModeSelect){
   playerModeSelect.onchange=()=>{
+    try{
+      var _em=document.getElementById('emptyMsg');
+      if(_em){
+        var _base='Carga un archivo .swf o pega una URL para comenzar';
+        var _msg='';
+        if(playerModeSelect.value==='flash'){
+          if(window.__HAS_FLASH_PLUGIN__){
+            _msg='<br><div style="margin-top:6px;font-size:0.7em;color:#7CFC7C;line-height:1.3;">'
+                +'✅ Plugin Flash detectado.<br>Modo <b>Flash nativo</b> activado automáticamente.'
+                +'</div>';
+          } else {
+            _msg='<br><div style="margin-top:6px;font-size:0.7em;color:#FF8888;line-height:1.3;">'
+                +'❌ Este navegador <b>no puede ejecutar Flash</b><br>de forma nativa (sin plugin NPAPI/PPAPI/ActiveX).'
+                +'</div>';
+          }
+        }
+        _em.innerHTML=_base+_msg;
+      }
+    }catch(_){}
     remountCurrentPlayer();
   };
 }
@@ -1780,6 +1917,8 @@ document.getElementById('fileInput').onchange=async e=>{
   const blob=new Blob([buf],{type:'application/x-shockwave-flash'});
   currentBlobUrl=URL.createObjectURL(blob);
   cachedBlobUrls.push(currentBlobUrl);
+  // Reset URL remota — venimos de un archivo local.
+  window.__lastSwfUrl = null;
   // Guardar también en Cache Storage temporal (se borra al detener/refrescar)
   try{
     if('caches' in window){
