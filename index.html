@@ -378,23 +378,27 @@ header.collapsed .row{display:none}
 .modal label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
 .modal input,.modal select{width:100%}
 /* Teclado virtual del mapeador de mando */
-.gp-kb{display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:rgba(0,0,0,.18);padding:10px;border-radius:10px;border:1px solid var(--border);max-height:none;overflow-x:auto;overflow-y:hidden;margin-top:6px;scrollbar-width:thin;width:100%}
-.gp-kb::-webkit-scrollbar{height:8px}
-.gp-kb::-webkit-scrollbar-thumb{background:#3a3f48;border-radius:4px}
-.gp-kb .kbd-row{min-width:max-content}
-.gp-kb .kbd-row{display:flex;gap:4px;justify-content:flex-start;flex-wrap:nowrap}
-.gp-kb .kbd-key{position:relative;min-width:34px;height:38px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text,#e8eaed);background:linear-gradient(180deg,#2a2f38,#1c2026);border:1px solid #3a3f48;border-bottom-width:3px;border-radius:6px;cursor:pointer;user-select:none;transition:transform .08s, box-shadow .15s, background .15s}
+/* Wrapper externo scrollable (compatible Chrome 84+) */
+.gp-kb-scroll{overflow-x:auto;overflow-y:hidden;width:100%;margin-top:6px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;background:rgba(0,0,0,.18);border-radius:10px;border:1px solid var(--border)}
+.gp-kb-scroll::-webkit-scrollbar{height:8px}
+.gp-kb-scroll::-webkit-scrollbar-thumb{background:#3a3f48;border-radius:4px}
+/* Contenedor interno con ancho mínimo = ancho del contenido */
+.gp-kb{display:table;padding:10px;border-spacing:0;min-width:-webkit-max-content;min-width:-moz-max-content;min-width:max-content;width:100%}
+.gp-kb .kbd-row{display:table-row}
+.gp-kb .kbd-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:4px;-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;-ms-flex-wrap:nowrap;flex-wrap:nowrap;margin-bottom:4px;white-space:nowrap}
+.gp-kb .kbd-key{position:relative;min-width:34px;height:38px;padding:0 8px;display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text,#e8eaed);background:linear-gradient(180deg,#2a2f38,#1c2026);border:1px solid #3a3f48;border-bottom-width:3px;border-radius:6px;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-transition:transform .08s, box-shadow .15s, background .15s;transition:transform .08s, box-shadow .15s, background .15s;-ms-flex-negative:0;flex-shrink:0}
 .gp-kb .kbd-key:hover{background:linear-gradient(180deg,#323844,#21262e)}
-.gp-kb .kbd-key:active{transform:translateY(1px);border-bottom-width:2px}
+.gp-kb .kbd-key:active{-webkit-transform:translateY(1px);transform:translateY(1px);border-bottom-width:2px}
 .gp-kb .kbd-key.wide{min-width:60px}
 .gp-kb .kbd-key.wider{min-width:90px}
 .gp-kb .kbd-key.widest{min-width:160px}
 .gp-kb .kbd-key.assigned{background:linear-gradient(180deg,#1f3a2a,#15291f);border-color:#2c7a4d}
-.gp-kb .kbd-key.capturing{background:linear-gradient(180deg,#3a2f1f,#2a2014);border-color:#c08a3a;box-shadow:0 0 0 2px rgba(217,159,73,.55);animation:gpPulse 1s ease-in-out infinite}
-.gp-kb .kbd-key.flash{box-shadow:0 0 0 2px hsl(var(--primary,210 90% 60%));background:linear-gradient(180deg,#1d3a55,#13283a)}
+.gp-kb .kbd-key.capturing{background:linear-gradient(180deg,#3a2f1f,#2a2014);border-color:#c08a3a;-webkit-box-shadow:0 0 0 2px rgba(217,159,73,.55);box-shadow:0 0 0 2px rgba(217,159,73,.55);-webkit-animation:gpPulse 1s ease-in-out infinite;animation:gpPulse 1s ease-in-out infinite}
+.gp-kb .kbd-key.flash{-webkit-box-shadow:0 0 0 2px #4d9fe0;box-shadow:0 0 0 2px hsl(var(--primary,210 90% 60%));background:linear-gradient(180deg,#1d3a55,#13283a)}
 .gp-kb .kbd-key .badge{position:absolute;top:-6px;right:-4px;min-width:14px;height:14px;padding:0 3px;font-size:9px;line-height:14px;text-align:center;border-radius:7px;background:#2c7a4d;color:#fff;font-weight:700;border:1px solid #16331f}
+@-webkit-keyframes gpPulse{0%,100%{-webkit-box-shadow:0 0 0 2px rgba(217,159,73,.55);box-shadow:0 0 0 2px rgba(217,159,73,.55)}50%{-webkit-box-shadow:0 0 0 4px rgba(217,159,73,.25);box-shadow:0 0 0 4px rgba(217,159,73,.25)}}
 @keyframes gpPulse{0%,100%{box-shadow:0 0 0 2px rgba(217,159,73,.55)}50%{box-shadow:0 0 0 4px rgba(217,159,73,.25)}}
-.gp-assigned-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;margin:2px;background:rgba(44,122,77,.18);border:1px solid #2c7a4d;border-radius:10px;font-size:11px;color:#9be0b8}
+.gp-assigned-chip{display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:4px;padding:2px 6px;margin:2px;background:rgba(44,122,77,.18);border:1px solid #2c7a4d;border-radius:10px;font-size:11px;color:#9be0b8}
 .gp-assigned-chip button{all:unset;cursor:pointer;color:#ff9b9b;font-weight:700;padding:0 2px}
 .status{padding:10px;border-radius:10px;font-size:12px;margin-top:10px;text-align:center;font-weight:500}
 .status.detect{background:rgba(217,119,6,.12);color:var(--warn);border:1px solid rgba(217,119,6,.25)}
@@ -939,7 +943,7 @@ body.custom-btn-colors .pbtn:active{
           <button type="button" id="gpCancelCapBtn" class="warn" style="padding:4px 10px;font-size:12px;display:none">✕ Cancelar</button>
         </div>
       </div>
-      <div id="gpKeyboard" class="gp-kb"></div>
+      <div class="gp-kb-scroll"><div id="gpKeyboard" class="gp-kb"></div></div>
       <div id="gpAssignedList" style="margin-top:8px;font-size:11px;color:var(--muted)"></div>
       <div style="font-size:11px;color:var(--muted);margin-top:6px">Toca una tecla → pulsa cualquier botón del mando para asignarlo. Toca de nuevo una tecla con asignación para verla y borrarla.</div>
       <div id="gpAddBtn" style="display:none"></div>
@@ -1213,78 +1217,7 @@ function workerProxyUrl(rawUrl, type) {
   window.RufflePlayer = window.RufflePlayer || {};
   window.RufflePlayer.config = Object.assign({}, window.RufflePlayer.config||{}, { polyfills:false, autoplay:'on' });
 </script>
-<script>
-/* === Detección de navegador antiguo / plugin Flash nativo ===
-   - Chrome <88, Basilisk, Pale Moon, Waterfox Classic, IE, navegadores
-     sin WebAssembly o sin BigInt → se considera "legacy".
-   - Si hay plugin Flash detectado, también se fuerza modo Flash nativo.
-   En esos casos NO se carga Ruffle (que requiere WASM moderno + ES2020)
-   y se selecciona automáticamente el "Modo Flash (sin Ruffle)". */
-(function(){
-  function hasFlashPlugin(){
-    try{
-      if(navigator.plugins){
-        for(var i=0;i<navigator.plugins.length;i++){
-          var n=(navigator.plugins[i].name||'').toLowerCase();
-          if(n.indexOf('shockwave flash')>-1 || n.indexOf('flash')>-1) return true;
-        }
-      }
-      if(navigator.mimeTypes && navigator.mimeTypes['application/x-shockwave-flash']) return true;
-      if(typeof ActiveXObject!=='undefined'){
-        try{ new ActiveXObject('ShockwaveFlash.ShockwaveFlash'); return true; }catch(e){}
-      }
-    }catch(e){}
-    return false;
-  }
-  function isLegacy(){
-    var ua=navigator.userAgent||'';
-    if(typeof WebAssembly==='undefined') return true;
-    if(typeof BigInt==='undefined') return true;
-    if(/Basilisk|PaleMoon|Pale Moon|Goanna|Waterfox\/(?:5[0-6]|4|3)|MSIE |Trident\//i.test(ua)) return true;
-    var m=ua.match(/Chrom(?:e|ium)\/(\d+)/i);
-    if(m && parseInt(m[1],10)<88) return true;
-    var f=ua.match(/Firefox\/(\d+)/i);
-    if(f && parseInt(f[1],10)<78 && !/Basilisk|PaleMoon/i.test(ua)) return true;
-    return false;
-  }
-  var legacy = isLegacy();
-  var flash  = hasFlashPlugin();
-  window.__LEGACY_BROWSER__ = legacy;
-  window.__HAS_FLASH_PLUGIN__ = flash;
-  // Si hay plugin Flash o el navegador es antiguo, forzar modo "flash" y NO cargar Ruffle.
-  if(legacy || flash){
-    document.addEventListener('DOMContentLoaded',function(){
-      var sel=document.getElementById('playerMode');
-      if(sel){ sel.value='flash'; }
-    });
-  } else {
-    // Navegador moderno: cargar Ruffle normalmente.
-    var s=document.createElement('script');
-    s.src='https://unpkg.com/@ruffle-rs/ruffle';
-    s.async=false;
-    document.head.appendChild(s);
-  }
-  // Mensaje de estado de Flash nativo: SIEMPRE debajo del texto base "Carga un archivo .swf...".
-  document.addEventListener('DOMContentLoaded',function(){
-    var em=document.getElementById('emptyMsg');
-    if(!em) return;
-    var baseText = 'Carga un archivo .swf o pega una URL para comenzar';
-    var statusHtml;
-    if(flash){
-      statusHtml = '<br><div style="margin-top:6px;font-size:0.7em;color:#7CFC7C;line-height:1.3;">'
-                 + '✅ Plugin Flash detectado.<br>Modo <b>Flash nativo</b> activado automáticamente.'
-                 + '</div>';
-    } else if(legacy){
-      statusHtml = '<br><div style="margin-top:6px;font-size:0.7em;color:#FFD479;line-height:1.3;">'
-                 + '⚠️ Navegador antiguo detectado.<br>Usando <b>Modo Flash nativo</b> (sin Ruffle).'
-                 + '</div>';
-    } else {
-      statusHtml = '';
-    }
-    em.innerHTML = baseText + statusHtml;
-  });
-})();
-</script>
+<script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 
     
 <script>
@@ -1652,9 +1585,7 @@ document.getElementById('toggleHeaderBtn').onclick=()=>{
 /* ---------- Ruffle ---------- */
 let ruffle, player, currentBlobUrl=null;
 window.addEventListener('load',()=>{
-  if(window.RufflePlayer && typeof window.RufflePlayer.newest==='function'){
-    try{ ruffle=window.RufflePlayer.newest(); }catch(_){ ruffle=null; }
-  }
+  if(window.RufflePlayer){ruffle=window.RufflePlayer.newest()}
   applyTheme();
   applyConfig();
   // Limpiar cualquier caché de juego previo (si quedó tras un cierre/refresco)
@@ -1783,59 +1714,28 @@ function mountPlayer(src){
   const mode=getPlayerMode();
   document.getElementById('emptyMsg').style.display='none';
   if(mode==='flash'){
-    // Modo Flash nativo (sin Ruffle).
-    // En navegadores con plugin NPAPI (Basilisk/Pale Moon/Waterfox Classic)
-    // creamos un <embed> directamente — NO usamos <object classid="clsid:..">
-    // porque Goanna lo intenta instanciar como ActiveX y deja la zona en blanco.
-    // En IE/Edge legacy sí necesitamos <object>; se detecta por ActiveXObject.
+    // Modo Flash nativo (sin Ruffle): usa el plugin del navegador si existe.
     stage.innerHTML='';
-    // Preferir SIEMPRE la URL original sobre el blob: para Flash nativo,
-    // ya que el plugin NPAPI/PPAPI no carga URLs blob: de forma fiable.
-    const realSrc = (window.__lastSwfUrl && /^https?:/i.test(window.__lastSwfUrl))
-        ? window.__lastSwfUrl : src;
-    const isIE = (typeof ActiveXObject!=='undefined') || !!window.MSInputMethodContext;
-    if(isIE){
-      stage.innerHTML =
-        '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" '+
-                'codebase="https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab" '+
-                'width="100%" height="100%">'+
-          '<param name="movie" value="'+realSrc+'">'+
-          '<param name="quality" value="high">'+
-          '<param name="allowScriptAccess" value="always">'+
-          '<param name="allowFullScreen" value="true">'+
-          '<param name="wmode" value="direct">'+
-          '<param name="bgcolor" value="#000000">'+
-        '</object>';
-      player = stage.querySelector('object');
-    } else {
-      const emb=document.createElement('embed');
-      emb.setAttribute('type','application/x-shockwave-flash');
-      emb.setAttribute('src',realSrc);
-      emb.setAttribute('quality','high');
-      emb.setAttribute('wmode','direct');
-      emb.setAttribute('bgcolor','#000000');
-      emb.setAttribute('allowscriptaccess','always');
-      emb.setAttribute('allowfullscreen','true');
-      emb.setAttribute('pluginspage','https://www.adobe.com/go/getflashplayer');
-      emb.style.width='100%';
-      emb.style.height='100%';
-      emb.style.display='block';
-      stage.appendChild(emb);
-      player = emb;
-    }
+    const embed=document.createElement('embed');
+    embed.setAttribute('type','application/x-shockwave-flash');
+    embed.setAttribute('src',src);
+    embed.setAttribute('allowscriptaccess','always');
+    embed.setAttribute('allowfullscreen','true');
+    embed.setAttribute('quality','high');
+    // tabindex para que pueda recibir foco y eventos sintéticos (mando, teclado virtual)
+    embed.setAttribute('tabindex','0');
+    embed.style.width='100%';embed.style.height='100%';
+    embed.style.outline='none';
+    stage.appendChild(embed);
+    player=embed;
+    // Forzar foco para que el plugin nativo reciba los eventos enviados desde el mando
+    try{ setTimeout(()=>{ try{ embed.focus({preventScroll:true}); }catch{ try{ embed.focus(); }catch{} } }, 60); }catch{}
     const sb=document.getElementById('stopBtn');
     if(sb){ sb.textContent='⏹ Detener'; sb.dataset.state=''; }
     setTimeout(hideLoading,250);
     return;
   }
-  if(!ruffle){
-    if(window.__LEGACY_BROWSER__ || window.__HAS_FLASH_PLUGIN__){
-      var _sel=document.getElementById('playerMode');
-      if(_sel){ _sel.value='flash'; }
-      return mountPlayer(src);
-    }
-    alert('Ruffle aún no carga, intenta de nuevo');return;
-  }
+  if(!ruffle){alert('Ruffle aún no carga, intenta de nuevo');return}
   stage.innerHTML='';
   player=ruffle.createPlayer();
   player.style.width='100%';player.style.height='100%';
@@ -1855,15 +1755,6 @@ function mountPlayer(src){
 // Carga un .swf por URL (remota) usando el flujo de descarga con progreso + caché.
 async function mountPlayerFromUrl(swfUrl){
   try{
-    // En Modo Flash nativo: dejar que el plugin descargue la URL directamente.
-    // El plugin NPAPI/PPAPI no carga blob: de forma fiable (Basilisk en
-    // particular ignora silenciosamente blobs), así que evitamos el cache.
-    window.__lastSwfUrl = swfUrl;
-    if(getPlayerMode()==='flash'){
-      try{ hideLoading(); }catch(_){}
-      mountPlayer(swfUrl);
-      return;
-    }
     const blobUrl=await downloadSwfToCache(swfUrl);
     if(currentBlobUrl) try{URL.revokeObjectURL(currentBlobUrl)}catch{}
     currentBlobUrl=blobUrl;
@@ -1876,27 +1767,35 @@ async function mountPlayerFromUrl(swfUrl){
 
 const playerModeSelect=document.getElementById('playerMode');
 if(playerModeSelect){
+  // Persistir el modo elegido entre sesiones
+  try{
+    const saved=localStorage.getItem('flashtouch_player_mode');
+    if(saved==='flash'||saved==='ruffle') playerModeSelect.value=saved;
+  }catch{}
   playerModeSelect.onchange=()=>{
-    try{
-      var _em=document.getElementById('emptyMsg');
-      if(_em){
-        var _base='Carga un archivo .swf o pega una URL para comenzar';
-        var _msg='';
-        if(playerModeSelect.value==='flash'){
-          if(window.__HAS_FLASH_PLUGIN__){
-            _msg='<br><div style="margin-top:6px;font-size:0.7em;color:#7CFC7C;line-height:1.3;">'
-                +'✅ Plugin Flash detectado.<br>Modo <b>Flash nativo</b> activado automáticamente.'
-                +'</div>';
-          } else {
-            _msg='<br><div style="margin-top:6px;font-size:0.7em;color:#FF8888;line-height:1.3;">'
-                +'❌ Este navegador <b>no puede ejecutar Flash</b><br>de forma nativa (sin plugin NPAPI/PPAPI/ActiveX).'
-                +'</div>';
-          }
+    try{ localStorage.setItem('flashtouch_player_mode', playerModeSelect.value); }catch{}
+    // Aviso: en Modo Flash nativo, el plugin no recibe eventos de teclado sintéticos
+    if(playerModeSelect.value==='flash'){
+      try{
+        if(!sessionStorage.getItem('flashtouch_flash_warn')){
+          sessionStorage.setItem('flashtouch_flash_warn','1');
+          alert('⚠️ Modo Flash (sin Ruffle)\n\nEste modo usa el plugin nativo del navegador (<embed>). Por limitaciones de seguridad de los navegadores, el plugin NO recibe pulsaciones de teclado simuladas desde JavaScript.\n\nPor eso, en este modo:\n• El mando mapeado (🎮 Mapear Mando) no enviará teclas al juego.\n• Los botones táctiles y el joystick virtual tampoco enviarán teclas al juego.\n\nSolo funcionará el teclado físico real (si el navegador aún soporta el plugin de Flash).\n\nPara que el mando y los controles táctiles funcionen, usa el ⚡ Modo Ruffle.');
         }
-        _em.innerHTML=_base+_msg;
-      }
-    }catch(_){}
-    remountCurrentPlayer();
+      }catch{}
+    }
+    // Si hay un SWF cargado (de archivo, URL directa o extraído de una página web), recargarlo en el nuevo modo
+    if(currentBlobUrl){
+      remountCurrentPlayer();
+      return;
+    }
+    // Si aún no hay SWF pero el usuario ya tiene una URL de página web o .swf escrita,
+    // disparar la carga en el nuevo modo seleccionado.
+    const pageUrl=(document.getElementById('pageUrlInput')||{}).value;
+    const directUrl=(document.getElementById('urlInput')||{}).value;
+    if((pageUrl && pageUrl.trim()) || (directUrl && directUrl.trim())){
+      const btn=document.getElementById('loadUrlBtn');
+      if(btn) btn.click();
+    }
   };
 }
 
@@ -1917,8 +1816,6 @@ document.getElementById('fileInput').onchange=async e=>{
   const blob=new Blob([buf],{type:'application/x-shockwave-flash'});
   currentBlobUrl=URL.createObjectURL(blob);
   cachedBlobUrls.push(currentBlobUrl);
-  // Reset URL remota — venimos de un archivo local.
-  window.__lastSwfUrl = null;
   // Guardar también en Cache Storage temporal (se borra al detener/refrescar)
   try{
     if('caches' in window){
@@ -2734,30 +2631,46 @@ function _makeKeyEvent(type, info){
 function sendKey(type,k){
   const info=resolveKey(k); if(!info) return;
   const targets=[];
-  if(player) targets.push(player);
+  const isFlashMode = (typeof getPlayerMode==='function') ? getPlayerMode()==='flash' : false;
+  if(player){
+    targets.push(player);
+    const tag=(player.tagName||'').toLowerCase();
+    if(tag==='embed' || tag==='object'){
+      // En Modo Flash nativo: foco agresivo al embed antes de cada evento
+      try{
+        // Quitar foco de cualquier input/button activo primero
+        const ae=document.activeElement;
+        if(ae && ae!==player && ae!==document.body && ae.blur) ae.blur();
+      }catch{}
+      try{ player.focus({preventScroll:true}); }catch{ try{ player.focus(); }catch{} }
+      // Padre e hijo #player también reciben el evento
+      if(player.parentElement) targets.push(player.parentElement);
+      // En modo Flash también despachamos al contenedor #stage
+      const stage=document.getElementById('stage');
+      if(stage && stage!==player.parentElement) targets.push(stage);
+    }
+  }
   if(player&&player.shadowRoot){
     const c=player.shadowRoot.querySelector('canvas');
     if(c) targets.push(c);
-    // Algunos juegos escuchan también en el shadowRoot
     targets.push(player.shadowRoot);
   }
-  // Foco en body para que el evento "burbujee" hacia los listeners globales
-  try{ if(document.activeElement && document.activeElement.blur) {/* keep */} }catch{}
   targets.push(window, document, document.body);
   // Si hay un iframe (algunos players lo usan), también disparamos dentro
-  document.querySelectorAll('iframe').forEach(f=>{
+  document.querySelectorAll('iframe').forEach(function(f){
     try{
       if(f.contentWindow) targets.push(f.contentWindow);
       if(f.contentDocument) targets.push(f.contentDocument);
+      if(f.contentDocument && f.contentDocument.body) targets.push(f.contentDocument.body);
     }catch{}
   });
-  for(const t of targets){
-    try{ t.dispatchEvent(_makeKeyEvent(type, info)); }catch{}
+  for(var _ti=0;_ti<targets.length;_ti++){
+    try{ targets[_ti].dispatchEvent(_makeKeyEvent(type, info)); }catch{}
   }
   // Para 'keydown' enviamos también 'keypress' con caracteres imprimibles
   if(type==='keydown' && info.keyCode>=32 && info.keyCode!==127){
-    for(const t of targets){
-      try{ t.dispatchEvent(_makeKeyEvent('keypress', info)); }catch{}
+    for(var _ti2=0;_ti2<targets.length;_ti2++){
+      try{ targets[_ti2].dispatchEvent(_makeKeyEvent('keypress', info)); }catch{}
     }
   }
 }
